@@ -1,0 +1,326 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Animal {
+  id              String   @id @default(cuid())
+  name            String
+  commonName      String?
+  scientificName  String?
+  category        AnimalCategory
+  description     String?
+  imageUrl        String?
+  minTankSize     Int?
+  tempMin         Float?
+  tempMax         Float?
+  phMin           Float?
+  phMax           Float?
+  difficulty      Difficulty
+  temperament     Temperament?
+  dietType        DietType?
+  maxSize         Float?
+  lifespan        String?
+  careLevel       String?
+  origin          String?
+  tags            String[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  compatibilities  AnimalCompatibility[] @relation("animal_a")
+  compatibleWith   AnimalCompatibility[] @relation("animal_b")
+  builderEntries   BuilderEntry[]
+  trackedLivestock TrackedLivestock[]
+}
+
+enum AnimalCategory {
+  FISH
+  INVERTEBRATE
+  AMPHIBIAN
+  REPTILE
+  CORAL
+  OTHER
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum Temperament {
+  PEACEFUL
+  SEMI_AGGRESSIVE
+  AGGRESSIVE
+}
+
+enum DietType {
+  HERBIVORE
+  OMNIVORE
+  CARNIVORE
+}
+
+model Plant {
+  id              String   @id @default(cuid())
+  name            String
+  scientificName  String?
+  category        PlantCategory
+  description     String?
+  imageUrl        String?
+  lightRequirement LightLevel
+  growthRate      GrowthRate?
+  difficulty      Difficulty
+  tempMin         Float?
+  tempMax         Float?
+  phMin           Float?
+  phMax           Float?
+  maxHeight       Float?
+  placement       PlantPlacement?
+  co2Required     Boolean  @default(false)
+  tags            String[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  builderEntries  BuilderEntry[]
+  trackedLivestock TrackedLivestock[]
+}
+
+enum PlantCategory {
+  AQUATIC
+  SEMI_AQUATIC
+  TERRESTRIAL
+  MOSS
+  EPIPHYTE
+}
+
+enum LightLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum GrowthRate {
+  SLOW
+  MODERATE
+  FAST
+}
+
+enum PlantPlacement {
+  FOREGROUND
+  MIDGROUND
+  BACKGROUND
+  FLOATING
+  ATTACHED
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  name            String
+  brand           String?
+  category        ProductCategory
+  description     String?
+  imageUrl        String?
+  priceRange      PriceRange?
+  rating          Float?
+  affiliateUrl    String?
+  tags            String[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum ProductCategory {
+  FILTER
+  HEATER
+  LIGHTING
+  SUBSTRATE
+  DECORATION
+  WATER_TREATMENT
+  FOOD
+  TESTING
+  AIR_PUMP
+  CO2_SYSTEM
+  TOOL
+  OTHER
+}
+
+enum PriceRange {
+  BUDGET
+  MID_RANGE
+  PREMIUM
+}
+
+model AnimalCompatibility {
+  id        String            @id @default(cuid())
+  animalAId String
+  animalBId String
+  level     CompatibilityLevel
+  notes     String?
+
+  animalA   Animal @relation("animal_a", fields: [animalAId], references: [id])
+  animalB   Animal @relation("animal_b", fields: [animalBId], references: [id])
+
+  @@unique([animalAId, animalBId])
+}
+
+enum CompatibilityLevel {
+  COMPATIBLE
+  CAUTION
+  INCOMPATIBLE
+}
+
+model BuilderProject {
+  id              String   @id @default(cuid())
+  name            String
+  type            SetupType
+  tankSize        Int
+  length          Float?
+  width           Float?
+  height          Float?
+  skillLevel      Difficulty
+  maintenancePref MaintenanceLevel
+  budget          PriceRange?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  entries         BuilderEntry[]
+  environments    TankEnvironment[]
+}
+
+enum SetupType {
+  FRESHWATER
+  SALTWATER
+  BRACKISH
+  PALUDARIUM
+  VIVARIUM
+  TERRARIUM
+  RIPARIUM
+}
+
+enum MaintenanceLevel {
+  LOW
+  MODERATE
+  HIGH
+}
+
+model BuilderEntry {
+  id              String   @id @default(cuid())
+  projectId       String
+  animalId        String?
+  plantId         String?
+  quantity        Int      @default(1)
+  notes           String?
+
+  project         BuilderProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  animal          Animal?        @relation(fields: [animalId], references: [id])
+  plant           Plant?         @relation(fields: [plantId], references: [id])
+}
+
+model TankEnvironment {
+  id              String   @id @default(cuid())
+  name            String
+  projectId       String?
+  type            SetupType
+  tankSize        Int
+  length          Float?
+  width           Float?
+  height          Float?
+  startDate       DateTime?
+  status          EnvironmentStatus @default(SETUP)
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  project         BuilderProject?    @relation(fields: [projectId], references: [id])
+  waterLogs       WaterParameterLog[]
+  maintenanceLogs MaintenanceLog[]
+  feedingLogs     FeedingLog[]
+  livestock       TrackedLivestock[]
+}
+
+enum EnvironmentStatus {
+  SETUP
+  CYCLING
+  ACTIVE
+  PROBLEM
+  ARCHIVED
+}
+
+model WaterParameterLog {
+  id              String   @id @default(cuid())
+  environmentId   String
+  date            DateTime @default(now())
+  temperature     Float?
+  ph              Float?
+  ammonia         Float?
+  nitrite         Float?
+  nitrate         Float?
+  gh              Float?
+  kh              Float?
+  salinity        Float?
+  notes           String?
+
+  environment     TankEnvironment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+}
+
+model MaintenanceLog {
+  id              String   @id @default(cuid())
+  environmentId   String
+  date            DateTime @default(now())
+  type            MaintenanceType
+  description     String?
+  waterChangePercent Int?
+
+  environment     TankEnvironment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+}
+
+enum MaintenanceType {
+  WATER_CHANGE
+  FILTER_CLEAN
+  SUBSTRATE_VACUUM
+  GLASS_CLEAN
+  EQUIPMENT_CHECK
+  PLANT_TRIM
+  OTHER
+}
+
+model FeedingLog {
+  id              String   @id @default(cuid())
+  environmentId   String
+  date            DateTime @default(now())
+  foodType        String
+  amount          String?
+  notes           String?
+
+  environment     TankEnvironment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+}
+
+model TrackedLivestock {
+  id              String   @id @default(cuid())
+  environmentId   String
+  animalId        String?
+  plantId         String?
+  name            String?
+  quantity        Int      @default(1)
+  dateAdded       DateTime @default(now())
+  dateRemoved     DateTime?
+  healthStatus    HealthStatus @default(HEALTHY)
+  notes           String?
+
+  environment     TankEnvironment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  animal          Animal?         @relation(fields: [animalId], references: [id])
+  plant           Plant?          @relation(fields: [plantId], references: [id])
+}
+
+enum HealthStatus {
+  HEALTHY
+  STRESSED
+  SICK
+  DECEASED
+  REMOVED
+}
