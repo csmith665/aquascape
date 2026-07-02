@@ -56,9 +56,11 @@ export default function BuilderPage() {
               >
                 <option value="FRESHWATER">Freshwater Aquarium</option>
                 <option value="SALTWATER">Saltwater Aquarium</option>
+                <option value="BRACKISH">Brackish Aquarium</option>
                 <option value="PALUDARIUM">Paludarium</option>
                 <option value="VIVARIUM">Vivarium</option>
                 <option value="TERRARIUM">Terrarium</option>
+                <option value="RIPARIUM">Riparium</option>
               </select>
             </div>
 
