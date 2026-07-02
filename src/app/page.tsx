@@ -36,6 +36,14 @@ export default function HomePage() {
           </div>
 
           <div className="card">
+            <h3>Saved Builds</h3>
+            <p>Revisit your tank builder projects, review parameters, and revisit recommendations.</p>
+            <Link href="/projects" className="btn" style={{ marginTop: '1rem' }}>
+              My Builds
+            </Link>
+          </div>
+
+          <div className="card">
             <h3>Product Guide</h3>
             <p>Find the right filters, heaters, lighting, and more. Curated recommendations by budget.</p>
             <Link href="/products" className="btn" style={{ marginTop: '1rem' }}>

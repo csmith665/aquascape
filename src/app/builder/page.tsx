@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { Biome } from '@prisma/client';
 import { buildRecommendation, BuildResult } from './actions';
@@ -148,6 +149,11 @@ export default function BuilderPage() {
               <> · {result.project.biome.replace(/_/g, ' ')}</>
             )}
             {' · '}{result.project.tankSize} gallons
+          </p>
+          <p style={{ marginBottom: '1.5rem' }}>
+            <Link href={`/projects/${result.project.id}`} className="btn btn-secondary">
+              View saved build →
+            </Link>
           </p>
 
           {result.warnings.length > 0 && (
