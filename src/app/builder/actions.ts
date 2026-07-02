@@ -1,7 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/db';
-import { Difficulty, SetupType, MaintenanceLevel, ProductCategory } from '@prisma/client';
+import { Difficulty, SetupType, MaintenanceLevel, ProductCategory, Habitat } from '@prisma/client';
 import { z } from 'zod';
 
 const buildSchema = z.object({
@@ -11,6 +11,16 @@ const buildSchema = z.object({
   skillLevel: z.nativeEnum(Difficulty),
   maintenancePref: z.nativeEnum(MaintenanceLevel),
 });
+
+const setupToHabitat: Record<SetupType, Habitat[]> = {
+  [SetupType.FRESHWATER]: [Habitat.FRESHWATER],
+  [SetupType.SALTWATER]: [Habitat.SALTWATER],
+  [SetupType.BRACKISH]: [Habitat.BRACKISH],
+  [SetupType.PALUDARIUM]: [Habitat.PALUDARIUM, Habitat.FRESHWATER],
+  [SetupType.VIVARIUM]: [Habitat.VIVARIUM],
+  [SetupType.TERRARIUM]: [Habitat.TERRARIUM],
+  [SetupType.RIPARIUM]: [Habitat.RIPARIUM, Habitat.FRESHWATER],
+};
 
 export type BuildResult = Awaited<ReturnType<typeof buildRecommendation>>;
 
@@ -23,33 +33,35 @@ export async function buildRecommendation(formData: FormData) {
     maintenancePref: formData.get('maintenancePref'),
   });
 
-  // Filter animals: tank size fits, difficulty <= skill level (simplified)
+  const allowedHabitats = setupToHabitat[data.type];
+  const difficultyRank = { BEGINNER: 1, INTERMEDIATE: 2, ADVANCED: 3, EXPERT: 4 };
+
+  // Animals matching setup habitat and tank size
   const animals = await prisma.animal.findMany({
     where: {
+      habitats: { hasSome: allowedHabitats },
       minTankSize: { lte: data.tankSize },
     },
     orderBy: { difficulty: 'asc' },
   });
 
-  // Filter out animals too difficult for the selected skill level
-  const difficultyRank = { BEGINNER: 1, INTERMEDIATE: 2, ADVANCED: 3, EXPERT: 4 };
   const suitableAnimals = animals.filter(
     (a) => difficultyRank[a.difficulty] <= difficultyRank[data.skillLevel] + 1
   );
 
-  // Filter plants: exclude aquatic-only plants for non-aquatic setups, etc.
+  // Plants matching setup habitat and skill level
   const plants = await prisma.plant.findMany({
+    where: {
+      habitats: { hasSome: allowedHabitats },
+    },
     orderBy: { difficulty: 'asc' },
   });
 
-  const nonAquaticTypes: SetupType[] = [SetupType.VIVARIUM, SetupType.TERRARIUM];
-  const suitablePlants = plants.filter((p) => {
-    if (nonAquaticTypes.includes(data.type) && String(p.category) === 'AQUATIC') return false;
-    if (data.type === SetupType.FRESHWATER && String(p.category) === 'TERRESTRIAL') return false;
-    return difficultyRank[p.difficulty] <= difficultyRank[data.skillLevel] + 1;
-  });
+  const suitablePlants = plants.filter(
+    (p) => difficultyRank[p.difficulty] <= difficultyRank[data.skillLevel] + 1
+  );
 
-  // Recommend products based on setup type
+  // Products relevant to setup
   const productCategories: ProductCategory[] = [
     ProductCategory.FILTER,
     ProductCategory.HEATER,
@@ -58,23 +70,19 @@ export async function buildRecommendation(formData: FormData) {
     ProductCategory.TESTING,
     ProductCategory.WATER_TREATMENT,
   ];
+
+  if (data.type === SetupType.SALTWATER) productCategories.push(ProductCategory.AIR_PUMP);
+  const plantedTankTypes: SetupType[] = [SetupType.FRESHWATER, SetupType.PALUDARIUM];
+  if (plantedTankTypes.includes(data.type)) {
+    productCategories.push(ProductCategory.CO2_SYSTEM);
+  }
+
   const products = await prisma.product.findMany({
     where: { category: { in: productCategories } },
     orderBy: { rating: 'desc' },
     take: 12,
   });
 
-  // Build compatibility warnings for recommended animals
-  const animalIds = suitableAnimals.map((a) => a.id);
-  const compatibilities = await prisma.animalCompatibility.findMany({
-    where: {
-      OR: [
-        { animalAId: { in: animalIds }, animalBId: { in: animalIds } },
-      ],
-    },
-  });
-
-  // Create a project record
   const project = await prisma.builderProject.create({
     data: {
       name: data.name,
@@ -91,7 +99,6 @@ export async function buildRecommendation(formData: FormData) {
     animals: suitableAnimals.slice(0, 8),
     plants: suitablePlants.slice(0, 8),
     products: products.slice(0, 8),
-    compatibilities,
     warnings: generateWarnings(data, suitableAnimals),
   };
 }
@@ -102,21 +109,21 @@ function generateWarnings(
 ) {
   const warnings: string[] = [];
 
-  if (data.type === 'SALTWATER' && data.tankSize < 30) {
-    warnings.push('Saltwater aquariums typically need at least 30 gallons for stability. Consider a larger tank.');
+  if (data.type === SetupType.SALTWATER && data.tankSize < 30) {
+    warnings.push('Saltwater aquariums typically need at least 30 gallons for stability.');
   }
-
-  if (data.type === 'SALTWATER' && data.skillLevel === 'BEGINNER') {
-    warnings.push('Saltwater aquariums are challenging for beginners. Consider starting with freshwater.');
+  if (data.type === SetupType.SALTWATER && data.skillLevel === Difficulty.BEGINNER) {
+    warnings.push('Saltwater is challenging for beginners. Consider starting with freshwater.');
   }
-
-  if (data.maintenancePref === 'LOW' && data.type === 'SALTWATER') {
-    warnings.push('Saltwater setups require high maintenance. Your preference may not match this setup.');
+  if (data.maintenancePref === MaintenanceLevel.LOW && data.type === SetupType.SALTWATER) {
+    warnings.push('Saltwater setups require high maintenance.');
   }
-
-  const schoolingFish = animals.filter((a) => a.tags.includes('schooling'));
-  if (schoolingFish.length > 0 && data.tankSize < 10) {
-    warnings.push('Schooling fish need adequate swimming space. Consider a larger tank for active swimmers.');
+  if (animals.some((a) => a.tags.includes('schooling')) && data.tankSize < 10) {
+    warnings.push('Schooling fish need adequate swimming space. Consider a larger tank.');
+  }
+  const vivariumTypes: SetupType[] = [SetupType.VIVARIUM, SetupType.TERRARIUM];
+  if (vivariumTypes.includes(data.type) && data.tankSize < 10) {
+    warnings.push('Vivariums/terrariums benefit from more space for temperature gradients and hiding spots.');
   }
 
   return warnings;

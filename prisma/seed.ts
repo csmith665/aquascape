@@ -1,568 +1,76 @@
-import { PrismaClient, Difficulty, AnimalCategory, Temperament, DietType, PlantCategory, LightLevel, GrowthRate, PlantPlacement, ProductCategory, PriceRange, CompatibilityLevel } from '@prisma/client';
+import { PrismaClient, Difficulty, AnimalCategory, Temperament, DietType, PlantCategory, LightLevel, GrowthRate, PlantPlacement, ProductCategory, PriceRange, CompatibilityLevel, Habitat } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// External placeholder images keep the database small — only URLs are stored
+const img = (type: 'animal' | 'plant' | 'product', name: string) => {
+  const colors = { animal: '1a5490', plant: '2d5a27', product: '666666' };
+  return `https://placehold.co/400x300/${colors[type]}/ffffff?text=${encodeURIComponent(name)}`;
+};
+
 async function main() {
-  console.log('Seeding Aquascape database with verified data...');
+  console.log('Seeding Aquascape with expanded data...');
 
-  const animals = await Promise.all([
-    prisma.animal.create({
-      data: {
-        name: 'Neon Tetra',
-        scientificName: 'Paracheirodon innesi',
-        category: AnimalCategory.FISH,
-        difficulty: Difficulty.BEGINNER,
-        temperament: Temperament.PEACEFUL,
-        dietType: DietType.OMNIVORE,
-        minTankSize: 10,
-        tempMin: 68,
-        tempMax: 79,
-        phMin: 6.0,
-        phMax: 7.0,
-        maxSize: 1.5,
-        lifespan: '5-8 years',
-        origin: 'South America (Amazon Basin)',
-        description: 'Small, vibrant schooling fish with iridescent blue and red coloration. Must be kept in groups of 6 or more. Peaceful community fish ideal for planted tanks.',
-        tags: ['schooling', 'colorful', 'small', 'community', 'planted-tank', 'amazon'],
-      },
-    }),
-    prisma.animal.create({
-      data: {
-        name: 'Betta Fish',
-        scientificName: 'Betta splendens',
-        category: AnimalCategory.FISH,
-        difficulty: Difficulty.BEGINNER,
-        temperament: Temperament.SEMI_AGGRESSIVE,
-        dietType: DietType.CARNIVORE,
-        minTankSize: 5,
-        tempMin: 76,
-        tempMax: 82,
-        phMin: 6.5,
-        phMax: 7.5,
-        maxSize: 3,
-        lifespan: '3-5 years',
-        origin: 'Southeast Asia (Thailand, Cambodia, Vietnam)',
-        description: 'Stunning solitary fish with flowing fins and vibrant colors. Males are highly territorial and must be kept alone. Labyrinth organ allows them to breathe atmospheric air. Prefer calm water with minimal flow.',
-        tags: ['solo', 'colorful', 'labyrinth', 'beginner-friendly', 'low-flow'],
-      },
-    }),
-    prisma.animal.create({
-      data: {
-        name: 'Corydoras Catfish',
-        scientificName: 'Corydoras paleatus',
-        category: AnimalCategory.FISH,
-        difficulty: Difficulty.BEGINNER,
-        temperament: Temperament.PEACEFUL,
-        dietType: DietType.OMNIVORE,
-        minTankSize: 20,
-        tempMin: 72,
-        tempMax: 79,
-        phMin: 6.0,
-        phMax: 7.5,
-        maxSize: 2.5,
-        lifespan: '5-7 years',
-        origin: 'South America',
-        description: 'Bottom-dwelling catfish that help keep substrate clean by sifting for food. Must be kept in groups of 4 or more. Use sand or smooth gravel substrate to protect delicate barbels. Excellent community tank mates.',
-        tags: ['bottom-dweller', 'cleaner', 'schooling', 'peaceful', 'community'],
-      },
-    }),
-    prisma.animal.create({
-      data: {
-        name: 'Cherry Shrimp',
-        scientificName: 'Neocaridina davidi',
-        category: AnimalCategory.INVERTEBRATE,
-        difficulty: Difficulty.BEGINNER,
-        temperament: Temperament.PEACEFUL,
-        dietType: DietType.OMNIVORE,
-        minTankSize: 5,
-        tempMin: 65,
-        tempMax: 80,
-        phMin: 6.5,
-        phMax: 8.0,
-        maxSize: 1.5,
-        lifespan: '1-2 years',
-        origin: 'Taiwan',
-        description: 'Hardy, colorful dwarf shrimp excellent for planted tanks and algae control. Breed readily in stable conditions. Provide hiding spots for young. Avoid copper-based medications. Sensitive to ammonia spikes.',
-        tags: ['algae-eater', 'colorful', 'small', 'invertebrate', 'breeder', 'planted-tank'],
-      },
-    }),
-    prisma.animal.create({
-      data: {
-        name: 'Angelfish',
-        scientificName: 'Pterophyllum scalare',
-        category: AnimalCategory.FISH,
-        difficulty: Difficulty.INTERMEDIATE,
-        temperament: Temperament.SEMI_AGGRESSIVE,
-        dietType: DietType.OMNIVORE,
-        minTankSize: 30,
-        tempMin: 76,
-        tempMax: 84,
-        phMin: 6.0,
-        phMax: 7.5,
-        maxSize: 6,
-        lifespan: '10-12 years',
-        origin: 'South America (Amazon Basin)',
-        description: 'Elegant cichlid with tall, disc-shaped body and trailing fins. Can be territorial, especially when breeding. May eat very small fish. Requires tall tanks (minimum 18" height). Best kept in pairs or small groups.',
-        tags: ['centerpiece', 'tall', 'semi-aggressive', 'cichlid', 'amazon'],
-      },
-    }),
-    prisma.animal.create({
-      data: {
-        name: 'Discus',
-        scientificName: 'Symphysodon',
-        category: AnimalCategory.FISH,
-        difficulty: Difficulty.EXPERT,
-        temperament: Temperament.PEACEFUL,
-        dietType: DietType.OMNIVORE,
-        minTankSize: 55,
-        tempMin: 82,
-        tempMax: 88,
-        phMin: 6.0,
-        phMax: 7.0,
-        maxSize: 8,
-        lifespan: '10-15 years',
-        origin: 'South America (Amazon Basin)',
-        description: 'The "king of the aquarium." Requires pristine water conditions with frequent water changes (25-50% weekly). Sensitive to water quality fluctuations. Best kept in groups of 5+ in species-only or carefully selected community tanks. Demands experienced care.',
-        tags: ['centerpiece', 'advanced', 'colorful', 'sensitive', 'high-maintenance', 'amazon'],
-      },
-    }),
-    prisma.animal.create({
-      data: {
-        name: 'Amano Shrimp',
-        scientificName: 'Caridina multidentata',
-        category: AnimalCategory.INVERTEBRATE,
-        difficulty: Difficulty.BEGINNER,
-        temperament: Temperament.PEACEFUL,
-        dietType: DietType.HERBIVORE,
-        minTankSize: 10,
-        tempMin: 70,
-        tempMax: 80,
-        phMin: 6.5,
-        phMax: 7.5,
-        maxSize: 2,
-        lifespan: '2-3 years',
-        origin: 'Japan, Taiwan',
-        description: 'Excellent algae eaters, larger and hardier than cherry shrimp. Will not breed in freshwater (larvae require brackish water). Very effective at controlling hair algae and other soft algae types.',
-        tags: ['algae-eater', 'hardy', 'invertebrate', 'cleaner', 'non-breeding'],
-      },
-    }),
-    prisma.animal.create({
-      data: {
-        name: 'Leopard Gecko',
-        scientificName: 'Eublepharis macularius',
-        category: AnimalCategory.REPTILE,
-        difficulty: Difficulty.BEGINNER,
-        temperament: Temperament.PEACEFUL,
-        dietType: DietType.CARNIVORE,
-        minTankSize: 20,
-        tempMin: 75,
-        tempMax: 90,
-        maxSize: 10,
-        lifespan: '15-20 years',
-        origin: 'South Asia (Pakistan, India, Afghanistan)',
-        description: 'Docile, easy-to-handle lizard perfect for beginners. Nocturnal and terrestrial. Requires temperature gradient (cool side 75-80°F, warm side 85-90°F). Feed insects dusted with calcium and vitamin D3. Provide moist hide for shedding.',
-        tags: ['terrestrial', 'nocturnal', 'handleable', 'vivarium', 'desert'],
-      },
-    }),
-    prisma.animal.create({
-      data: {
-        name: 'Cardinal Tetra',
-        scientificName: 'Paracheirodon axelrodi',
-        category: AnimalCategory.FISH,
-        difficulty: Difficulty.INTERMEDIATE,
-        temperament: Temperament.PEACEFUL,
-        dietType: DietType.OMNIVORE,
-        minTankSize: 20,
-        tempMin: 73,
-        tempMax: 81,
-        phMin: 5.5,
-        phMax: 7.0,
-        maxSize: 2,
-        lifespan: '4-5 years',
-        origin: 'South America (Orinoco and Rio Negro)',
-        description: 'Similar to neon tetra but with red extending full body length. More sensitive to water conditions than neons. Must be kept in schools of 8+. Prefers soft, acidic water with dim lighting and plenty of plants.',
-        tags: ['schooling', 'colorful', 'sensitive', 'community', 'blackwater'],
-      },
-    }),
-    prisma.animal.create({
-      data: {
-        name: 'Bristlenose Pleco',
-        scientificName: 'Ancistrus sp.',
-        category: AnimalCategory.FISH,
-        difficulty: Difficulty.BEGINNER,
-        temperament: Temperament.PEACEFUL,
-        dietType: DietType.HERBIVORE,
-        minTankSize: 20,
-        tempMin: 72,
-        tempMax: 82,
-        phMin: 6.5,
-        phMax: 7.5,
-        maxSize: 5,
-        lifespan: '10-15 years',
-        origin: 'South America',
-        description: 'Excellent algae eater that stays smaller than common plecos. Peaceful bottom dweller. Provide driftwood for grazing and hiding spots. Supplement diet with algae wafers and blanched vegetables. Males develop distinctive bristly head growth.',
-        tags: ['algae-eater', 'bottom-dweller', 'peaceful', 'driftwood', 'community'],
-      },
-    }),
-  ]);
+  await prisma.animal.createMany({
+    data: [
+      { name: 'Neon Tetra', scientificName: 'Paracheirodon innesi', category: AnimalCategory.FISH, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.BEGINNER, temperament: Temperament.PEACEFUL, dietType: DietType.OMNIVORE, minTankSize: 10, tempMin: 68, tempMax: 79, phMin: 6, phMax: 7, maxSize: 1.5, lifespan: '5-8 years', origin: 'South America', imageUrl: img('animal', 'Neon Tetra'), description: 'Small, vibrant schooling fish with iridescent blue and red coloration.', careGuide: 'Keep in soft, acidic water with plenty of plants. 25% weekly water changes.', feedingGuide: 'Small amounts 2-3 times daily: flake, micro pellets, frozen daphnia.', socialNeeds: 'Schools of 6+ required.', breedingInfo: 'Difficult. Very soft, acidic water needed.', commonDiseases: 'Neon Tetra Disease — incurable.', waterChangeNeeds: '25% weekly', stockingRecommendations: '1 per gallon minimum 10 gallons.', specialConsiderations: 'Long acclimation recommended.', tags: ['schooling', 'colorful', 'community'] },
+      { name: 'Cardinal Tetra', scientificName: 'Paracheirodon axelrodi', category: AnimalCategory.FISH, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.INTERMEDIATE, temperament: Temperament.PEACEFUL, dietType: DietType.OMNIVORE, minTankSize: 20, tempMin: 73, tempMax: 81, phMin: 5.5, phMax: 7, maxSize: 2, lifespan: '4-5 years', origin: 'South America', imageUrl: img('animal', 'Cardinal Tetra'), description: 'Similar to neon tetra but with red extending full body length. More sensitive.', careGuide: 'Stable soft, acidic water. Dim lighting and tannins appreciated.', feedingGuide: 'Micro pellets, frozen bloodworms, brine shrimp.', socialNeeds: 'Schools of 8+.', breedingInfo: 'Very difficult.', commonDiseases: 'Ich and fungal infections if stressed.', waterChangeNeeds: '20-25% weekly', stockingRecommendations: '8-10 per 20 gallons.', specialConsiderations: 'More heat-tolerant than neons.', tags: ['schooling', 'colorful', 'sensitive'] },
+      { name: 'Betta Fish', scientificName: 'Betta splendens', category: AnimalCategory.FISH, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.BEGINNER, temperament: Temperament.SEMI_AGGRESSIVE, dietType: DietType.CARNIVORE, minTankSize: 5, tempMin: 76, tempMax: 82, phMin: 6.5, phMax: 7.5, maxSize: 3, lifespan: '3-5 years', origin: 'Southeast Asia', imageUrl: img('animal', 'Betta Fish'), description: 'Stunning solitary fish with flowing fins. Males must be kept alone.', careGuide: 'Warm clean water, gentle filter, lid, plants.', feedingGuide: '2-3 pellets twice daily, fast once weekly.', socialNeeds: 'Solitary. Males fight to death.', breedingInfo: 'Bubble nest builder.', commonDiseases: 'Fin rot, velvet, ich.', waterChangeNeeds: '25-50% weekly', stockingRecommendations: 'One betta per tank.', specialConsiderations: 'Labyrinth breather — needs surface access.', tags: ['solo', 'colorful', 'beginner'] },
+      { name: 'Corydoras Catfish', scientificName: 'Corydoras paleatus', category: AnimalCategory.FISH, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.BEGINNER, temperament: Temperament.PEACEFUL, dietType: DietType.OMNIVORE, minTankSize: 20, tempMin: 72, tempMax: 79, phMin: 6, phMax: 7.5, maxSize: 2.5, lifespan: '5-7 years', origin: 'South America', imageUrl: img('animal', 'Corydoras Catfish'), description: 'Bottom-dwelling catfish that clean substrate. Keep in groups.', careGuide: 'Sand substrate, caves, plants.', feedingGuide: 'Sinking pellets, algae wafers, frozen foods.', socialNeeds: 'Groups of 4-6 minimum.', breedingInfo: 'Cool water changes trigger spawning.', commonDiseases: 'Barbel erosion from rough gravel.', waterChangeNeeds: '25% weekly', stockingRecommendations: '4-6 per 20 gallons.', specialConsiderations: 'Surface-gulping is normal.', tags: ['bottom-dweller', 'schooling', 'cleaner'] },
+      { name: 'Bristlenose Pleco', scientificName: 'Ancistrus sp.', category: AnimalCategory.FISH, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.BEGINNER, temperament: Temperament.PEACEFUL, dietType: DietType.HERBIVORE, minTankSize: 20, tempMin: 72, tempMax: 82, phMin: 6.5, phMax: 7.5, maxSize: 5, lifespan: '10-15 years', origin: 'South America', imageUrl: img('animal', 'Bristlenose Pleco'), description: 'Excellent algae eater that stays small.', careGuide: 'Driftwood for grazing, good filtration, cave.', feedingGuide: 'Algae wafers, driftwood, blanched zucchini.', socialNeeds: 'Peaceful. Males territorial when breeding.', breedingInfo: 'Cave spawner.', commonDiseases: 'Starvation without enough vegetables.', waterChangeNeeds: '25-30% weekly', stockingRecommendations: 'One per 20-30 gallons.', specialConsiderations: 'Produces significant waste.', tags: ['algae-eater', 'bottom-dweller', 'driftwood'] },
+      { name: 'Angelfish', scientificName: 'Pterophyllum scalare', category: AnimalCategory.FISH, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.INTERMEDIATE, temperament: Temperament.SEMI_AGGRESSIVE, dietType: DietType.OMNIVORE, minTankSize: 30, tempMin: 76, tempMax: 84, phMin: 6, phMax: 7.5, maxSize: 6, lifespan: '10-12 years', origin: 'South America', imageUrl: img('animal', 'Angelfish'), description: 'Elegant cichlid with tall disc-shaped body.', careGuide: 'Tall tank, plants, driftwood, open swimming.', feedingGuide: 'Pellets, frozen bloodworms, brine shrimp.', socialNeeds: 'Pairs or small groups. Territorial when breeding.', breedingInfo: 'Pairs form, lay eggs on vertical surfaces.', commonDiseases: 'Hexamita, ich, fin rot.', waterChangeNeeds: '25-30% weekly', stockingRecommendations: 'Pair in 30 gal, group in 55+ gal.', specialConsiderations: 'May eat very small fish.', tags: ['centerpiece', 'tall', 'cichlid'] },
+      { name: 'Discus', scientificName: 'Symphysodon', category: AnimalCategory.FISH, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.EXPERT, temperament: Temperament.PEACEFUL, dietType: DietType.OMNIVORE, minTankSize: 55, tempMin: 82, tempMax: 88, phMin: 6, phMax: 7, maxSize: 8, lifespan: '10-15 years', origin: 'South America', imageUrl: img('animal', 'Discus'), description: 'The king of the aquarium. Requires expert care.', careGuide: 'Pristine water, 25-50% weekly changes, excellent filtration.', feedingGuide: 'Beef heart, bloodworms, pellets 3-4x daily.', socialNeeds: 'Groups of 5+ in species tanks.', breedingInfo: 'Pairs care for fry.', commonDiseases: 'Intestinal parasites, bacterial infections.', waterChangeNeeds: '25-50% weekly', stockingRecommendations: '5-6 in 75+ gallons.', specialConsiderations: 'Very sensitive to parameter swings.', tags: ['centerpiece', 'advanced', 'sensitive'] },
+      { name: 'Guppy', scientificName: 'Poecilia reticulata', category: AnimalCategory.FISH, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.BEGINNER, temperament: Temperament.PEACEFUL, dietType: DietType.OMNIVORE, minTankSize: 10, tempMin: 72, tempMax: 82, phMin: 6.8, phMax: 7.8, maxSize: 2.5, lifespan: '2-3 years', origin: 'South America', imageUrl: img('animal', 'Guppy'), description: 'Colorful active livebearers.', careGuide: 'Hardy, provide plants for fry.', feedingGuide: 'Flake, micro pellets, frozen foods.', socialNeeds: '2-3 females per male.', breedingInfo: 'Livebearer every 4-6 weeks.', commonDiseases: 'Ich, fin rot, camallanus.', waterChangeNeeds: '25% weekly', stockingRecommendations: '1 per 2 gallons.', specialConsiderations: 'Population can explode quickly.', tags: ['colorful', 'livebearer', 'active'] },
+      { name: 'Harlequin Rasbora', scientificName: 'Trigonostigma heteromorpha', category: AnimalCategory.FISH, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.BEGINNER, temperament: Temperament.PEACEFUL, dietType: DietType.OMNIVORE, minTankSize: 10, tempMin: 72, tempMax: 81, phMin: 6, phMax: 7.5, maxSize: 2, lifespan: '5-8 years', origin: 'Southeast Asia', imageUrl: img('animal', 'Harlequin Rasbora'), description: 'Peaceful schooling fish with copper bodies and black patches.', careGuide: 'Planted tanks, stable parameters.', feedingGuide: 'Flakes, micro pellets, frozen foods.', socialNeeds: 'Schools of 6+.', breedingInfo: 'Difficult egg scatterer.', commonDiseases: 'Generally hardy.', waterChangeNeeds: '25% weekly', stockingRecommendations: '6-10 per 20 gallons.', specialConsiderations: 'Slow acclimate.', tags: ['schooling', 'peaceful', 'planted-tank'] },
+      { name: 'Zebra Danio', scientificName: 'Danio rerio', category: AnimalCategory.FISH, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.BEGINNER, temperament: Temperament.PEACEFUL, dietType: DietType.OMNIVORE, minTankSize: 10, tempMin: 65, tempMax: 77, phMin: 6.5, phMax: 7.5, maxSize: 2, lifespan: '3-5 years', origin: 'South Asia', imageUrl: img('animal', 'Zebra Danio'), description: 'Hardy active striped fish.', careGuide: 'Cooler tolerant, open swimming space.', feedingGuide: 'Flakes, pellets, frozen foods.', socialNeeds: 'Schools of 6+.', breedingInfo: 'Easy egg scatterer.', commonDiseases: 'Very disease resistant.', waterChangeNeeds: '25% weekly', stockingRecommendations: '6-10 per 20 gallons.', specialConsiderations: 'Active swimmers may stress slow fish.', tags: ['schooling', 'active', 'hardy'] },
+      { name: 'German Blue Ram', scientificName: 'Mikrogeophagus ramirezi', category: AnimalCategory.FISH, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.INTERMEDIATE, temperament: Temperament.PEACEFUL, dietType: DietType.OMNIVORE, minTankSize: 20, tempMin: 78, tempMax: 85, phMin: 5.5, phMax: 7, maxSize: 2, lifespan: '2-3 years', origin: 'South America', imageUrl: img('animal', 'German Blue Ram'), description: 'Colorful peaceful dwarf cichlid.', careGuide: 'Warm soft acidic water, caves, plants.', feedingGuide: 'Small frozen foods, pellets, live foods.', socialNeeds: 'Forms pairs.', breedingInfo: 'Cave spawner, both parents care.', commonDiseases: 'Sensitive to poor water and parasites.', waterChangeNeeds: '20-25% weekly', stockingRecommendations: 'Pair in 20+ gallons.', specialConsiderations: 'Inbred strains can be delicate.', tags: ['colorful', 'dwarf-cichlid', 'pair'] },
+      { name: 'Cherry Shrimp', scientificName: 'Neocaridina davidi', category: AnimalCategory.INVERTEBRATE, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.BEGINNER, temperament: Temperament.PEACEFUL, dietType: DietType.OMNIVORE, minTankSize: 5, tempMin: 65, tempMax: 80, phMin: 6.5, phMax: 8, maxSize: 1.5, lifespan: '1-2 years', origin: 'Taiwan', imageUrl: img('animal', 'Cherry Shrimp'), description: 'Hardy colorful dwarf shrimp.', careGuide: 'Moss and plants, no copper, stable params.', feedingGuide: 'Algae, biofilm, algae wafers, veggies.', socialNeeds: 'Peaceful, breed readily.', breedingInfo: 'Live young, prolific.', commonDiseases: 'Copper lethal.', waterChangeNeeds: '10-20% weekly drip acclimated', stockingRecommendations: '5-10 per gallon.', specialConsiderations: 'Drip acclimate.', tags: ['algae-eater', 'colorful', 'invertebrate'] },
+      { name: 'Amano Shrimp', scientificName: 'Caridina multidentata', category: AnimalCategory.INVERTEBRATE, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.BEGINNER, temperament: Temperament.PEACEFUL, dietType: DietType.HERBIVORE, minTankSize: 10, tempMin: 70, tempMax: 80, phMin: 6.5, phMax: 7.5, maxSize: 2, lifespan: '2-3 years', origin: 'Japan, Taiwan', imageUrl: img('animal', 'Amano Shrimp'), description: 'Larger algae-eating shrimp.', careGuide: 'Planted tanks, stable water.', feedingGuide: 'Hair algae, algae wafers, vegetables.', socialNeeds: 'Peaceful in groups.', breedingInfo: 'Larvae need brackish water.', commonDiseases: 'Copper lethal.', waterChangeNeeds: '25% weekly', stockingRecommendations: '1 per 2-3 gallons.', specialConsiderations: 'Excellent hair algae control.', tags: ['algae-eater', 'hardy', 'invertebrate'] },
+      { name: 'Nerite Snail', scientificName: 'Neritina natalensis', category: AnimalCategory.INVERTEBRATE, habitats: [Habitat.FRESHWATER, Habitat.BRACKISH], difficulty: Difficulty.BEGINNER, temperament: Temperament.PEACEFUL, dietType: DietType.HERBIVORE, minTankSize: 5, tempMin: 72, tempMax: 79, phMin: 7, phMax: 8.5, maxSize: 1, lifespan: '1-2 years', origin: 'Africa', imageUrl: img('animal', 'Nerite Snail'), description: 'Best algae-eating snail, no reproduction in freshwater.', careGuide: 'Calcium for shell, excellent algae control.', feedingGuide: 'Algae, biofilm, algae wafers.', socialNeeds: 'Peaceful.', breedingInfo: 'Eggs hatch only in brackish.', commonDiseases: 'Shell erosion in soft water.', waterChangeNeeds: '25% weekly', stockingRecommendations: '1 per 5 gallons.', specialConsiderations: 'May climb out — use lid.', tags: ['algae-eater', 'snail', 'cleaner'] },
+      { name: 'Leopard Gecko', scientificName: 'Eublepharis macularius', category: AnimalCategory.REPTILE, habitats: [Habitat.TERRARIUM], difficulty: Difficulty.BEGINNER, temperament: Temperament.PEACEFUL, dietType: DietType.CARNIVORE, minTankSize: 20, tempMin: 75, tempMax: 90, maxSize: 10, lifespan: '15-20 years', origin: 'South Asia', imageUrl: img('animal', 'Leopard Gecko'), description: 'Docile nocturnal lizard.', careGuide: 'Temp gradient 75-90°F, moist hide, under-tank heater.', feedingGuide: 'Crickets, mealworms, dubia — dust calcium.', socialNeeds: 'Solitary. Do not co-house males.', breedingInfo: 'Egg layer, temp-sexed.', commonDiseases: 'MBD, impaction.', waterChangeNeeds: 'N/A', stockingRecommendations: 'One per 20-gallon long.', specialConsiderations: 'No loose sand substrate.', tags: ['terrestrial', 'nocturnal', 'handleable'] },
+      { name: 'Crested Gecko', scientificName: 'Correlophus ciliatus', category: AnimalCategory.REPTILE, habitats: [Habitat.VIVARIUM, Habitat.TERRARIUM], difficulty: Difficulty.BEGINNER, temperament: Temperament.PEACEFUL, dietType: DietType.OMNIVORE, minTankSize: 20, tempMin: 72, tempMax: 78, maxSize: 8, lifespan: '15-20 years', origin: 'New Caledonia', imageUrl: img('animal', 'Crested Gecko'), description: 'Arboreal gecko eating prepared fruit diet.', careGuide: 'Tall terrarium, branches, plants, mist daily.', feedingGuide: 'Commercial gecko diet, occasional insects.', socialNeeds: 'Solitary or female pairs.', breedingInfo: 'Egg layer.', commonDiseases: 'MBD, tail loss.', waterChangeNeeds: 'N/A', stockingRecommendations: 'One per 20-gallon tall.', specialConsiderations: 'Tail does not regrow.', tags: ['arboreal', 'handleable', 'vivarium'] },
+      { name: 'Poison Dart Frog', scientificName: 'Dendrobatidae', category: AnimalCategory.AMPHIBIAN, habitats: [Habitat.VIVARIUM], difficulty: Difficulty.ADVANCED, temperament: Temperament.PEACEFUL, dietType: DietType.CARNIVORE, minTankSize: 10, tempMin: 72, tempMax: 78, maxSize: 2, lifespan: '8-15 years', origin: 'Central/South America', imageUrl: img('animal', 'Poison Dart Frog'), description: 'Colorful frogs requiring specialized planted vivarium.', careGuide: 'High humidity 80-100%, good ventilation, mist often.', feedingGuide: 'Fruit flies, pinheads, springtails.', socialNeeds: 'Small groups if space.', breedingInfo: 'Eggs in leaf litter, tadpoles need water.', commonDiseases: 'Bacterial infections from poor airflow.', waterChangeNeeds: 'N/A', stockingRecommendations: '2-3 per 10-20 gallon vivarium.', specialConsiderations: 'Captive-bred are non-toxic.', tags: ['vivarium', 'colorful', 'humidity', 'advanced'] },
+      { name: 'Green Star Polyp', scientificName: 'Pachyclavularia violacea', category: AnimalCategory.CORAL, habitats: [Habitat.SALTWATER], difficulty: Difficulty.BEGINNER, temperament: Temperament.PEACEFUL, dietType: DietType.OMNIVORE, minTankSize: 30, tempMin: 75, tempMax: 80, phMin: 8.1, phMax: 8.4, maxSize: 12, lifespan: 'Indefinite', origin: 'Indo-Pacific', imageUrl: img('animal', 'Green Star Polyp'), description: 'Fast-growing soft coral, beginner-friendly.', careGuide: 'Low-moderate light and flow. Can overgrow.', feedingGuide: 'Photosynthetic, occasional phytoplankton.', socialNeeds: 'Peaceful but overgrows neighbors.', breedingInfo: 'Spreads by encrusting mat.', commonDiseases: 'Few issues.', waterChangeNeeds: '10-20% biweekly', stockingRecommendations: 'Leave room for growth.', specialConsiderations: 'Can become invasive.', tags: ['coral', 'soft-coral', 'beginner'] },
+    ],
+  });
 
-  const plants = await Promise.all([
-    prisma.plant.create({
-      data: {
-        name: 'Java Fern',
-        scientificName: 'Microsorum pteropus',
-        category: PlantCategory.AQUATIC,
-        difficulty: Difficulty.BEGINNER,
-        lightRequirement: LightLevel.LOW,
-        growthRate: GrowthRate.SLOW,
-        maxHeight: 14,
-        placement: PlantPlacement.ATTACHED,
-        co2Required: false,
-        tempMin: 68,
-        tempMax: 82,
-        phMin: 6.0,
-        phMax: 7.5,
-        description: 'Extremely hardy epiphytic plant that attaches to driftwood and rocks. Do not bury the rhizome in substrate (will rot). Thrives in low light and low-tech setups. Propagate by dividing rhizome or from plantlets on leaf undersides.',
-        tags: ['low-light', 'attached', 'hardy', 'beginner', 'epiphyte', 'rhizome'],
-      },
-    }),
-    prisma.plant.create({
-      data: {
-        name: 'Anubias Nana',
-        scientificName: 'Anubias barteri var. nana',
-        category: PlantCategory.AQUATIC,
-        difficulty: Difficulty.BEGINNER,
-        lightRequirement: LightLevel.LOW,
-        growthRate: GrowthRate.SLOW,
-        maxHeight: 6,
-        placement: PlantPlacement.ATTACHED,
-        co2Required: false,
-        tempMin: 72,
-        tempMax: 82,
-        phMin: 6.0,
-        phMax: 7.5,
-        description: 'Compact, extremely hardy epiphytic plant perfect for attaching to hardscape. Do not bury rhizome. Very low maintenance and resistant to herbivorous fish. Slow grower but nearly indestructible. Propagate by rhizome division.',
-        tags: ['low-light', 'compact', 'attached', 'beginner', 'epiphyte', 'indestructible'],
-      },
-    }),
-    prisma.plant.create({
-      data: {
-        name: 'Amazon Sword',
-        scientificName: 'Echinodorus amazonicus',
-        category: PlantCategory.AQUATIC,
-        difficulty: Difficulty.BEGINNER,
-        lightRequirement: LightLevel.MEDIUM,
-        growthRate: GrowthRate.MODERATE,
-        maxHeight: 20,
-        placement: PlantPlacement.BACKGROUND,
-        co2Required: false,
-        tempMin: 72,
-        tempMax: 82,
-        phMin: 6.5,
-        phMax: 7.5,
-        description: 'Classic background plant with broad, sword-shaped leaves. Heavy root feeder - use nutrient-rich substrate or root tabs. Can grow emersed. Excellent for beginners. May develop iron deficiency (yellow leaves) without adequate nutrients.',
-        tags: ['background', 'broad-leaf', 'rooted', 'beginner', 'root-feeder'],
-      },
-    }),
-    prisma.plant.create({
-      data: {
-        name: 'Java Moss',
-        scientificName: 'Taxiphyllum barbieri',
-        category: PlantCategory.MOSS,
-        difficulty: Difficulty.BEGINNER,
-        lightRequirement: LightLevel.LOW,
-        growthRate: GrowthRate.MODERATE,
-        maxHeight: 4,
-        placement: PlantPlacement.ATTACHED,
-        co2Required: false,
-        tempMin: 59,
-        tempMax: 86,
-        phMin: 5.0,
-        phMax: 8.0,
-        description: 'Versatile moss that attaches to any surface. Excellent for shrimp breeding tanks (provides cover and biofilm). Tolerates wide parameter range. Can be trimmed and shaped. May collect debris - rinse during water changes.',
-        tags: ['moss', 'shrimp-friendly', 'low-light', 'versatile', 'breeding', 'biofilm'],
-      },
-    }),
-    prisma.plant.create({
-      data: {
-        name: 'Dwarf Hairgrass',
-        scientificName: 'Eleocharis parvula',
-        category: PlantCategory.AQUATIC,
-        difficulty: Difficulty.INTERMEDIATE,
-        lightRequirement: LightLevel.HIGH,
-        growthRate: GrowthRate.MODERATE,
-        maxHeight: 4,
-        placement: PlantPlacement.FOREGROUND,
-        co2Required: true,
-        tempMin: 68,
-        tempMax: 82,
-        phMin: 6.0,
-        phMax: 7.5,
-        description: 'Creates beautiful carpet effect when grown in high light with CO2 injection. Plant in small clumps 1" apart in nutrient-rich substrate. Trim regularly to encourage horizontal growth. Challenging without CO2 and adequate lighting.',
-        tags: ['carpet', 'high-light', 'co2', 'foreground', 'high-tech', 'carpeting'],
-      },
-    }),
-    prisma.plant.create({
-      data: {
-        name: 'Pothos',
-        scientificName: 'Epipremnum aureum',
-        category: PlantCategory.TERRESTRIAL,
-        difficulty: Difficulty.BEGINNER,
-        lightRequirement: LightLevel.LOW,
-        growthRate: GrowthRate.FAST,
-        maxHeight: 72,
-        placement: PlantPlacement.BACKGROUND,
-        co2Required: false,
-        tempMin: 65,
-        tempMax: 85,
-        phMin: 6.0,
-        phMax: 7.5,
-        description: 'Excellent for paludariums, ripariums, and hang-on-back filters. Roots grow in water while leaves stay emersed. Extremely effective at removing nitrates. Fast-growing vine that can be trained or trimmed. Toxic if ingested by pets.',
-        tags: ['terrestrial', 'fast-growing', 'paludarium', 'air-purifying', 'nitrate-remover', 'emersed'],
-      },
-    }),
-    prisma.plant.create({
-      data: {
-        name: 'Cryptocoryne Wendtii',
-        scientificName: 'Cryptocoryne wendtii',
-        category: PlantCategory.AQUATIC,
-        difficulty: Difficulty.BEGINNER,
-        lightRequirement: LightLevel.LOW,
-        growthRate: GrowthRate.SLOW,
-        maxHeight: 12,
-        placement: PlantPlacement.MIDGROUND,
-        co2Required: false,
-        tempMin: 72,
-        tempMax: 82,
-        phMin: 6.0,
-        phMax: 8.0,
-        description: 'Hardy midground plant available in green, brown, and red varieties. May experience "crypt melt" when first planted (leaves die back then regrow). Do not move once established. Excellent for low-tech setups.',
-        tags: ['midground', 'low-light', 'hardy', 'crypt-melt', 'root-feeder'],
-      },
-    }),
-    prisma.plant.create({
-      data: {
-        name: 'Water Wisteria',
-        scientificName: 'Hygrophila difformis',
-        category: PlantCategory.AQUATIC,
-        difficulty: Difficulty.BEGINNER,
-        lightRequirement: LightLevel.MEDIUM,
-        growthRate: GrowthRate.FAST,
-        maxHeight: 20,
-        placement: PlantPlacement.BACKGROUND,
-        co2Required: false,
-        tempMin: 72,
-        tempMax: 82,
-        phMin: 6.5,
-        phMax: 7.5,
-        description: 'Fast-growing stem plant that helps control algae by absorbing excess nutrients. Can be planted in substrate or left floating. Propagate by cutting and replanting tops. Leaf shape varies with light intensity.',
-        tags: ['fast-growing', 'nutrient-absorber', 'beginner', 'stem-plant', 'algae-control'],
-      },
-    }),
-  ]);
+  await prisma.plant.createMany({
+    data: [
+      { name: 'Java Fern', scientificName: 'Microsorum pteropus', category: PlantCategory.AQUATIC, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.BEGINNER, lightRequirement: LightLevel.LOW, growthRate: GrowthRate.SLOW, maxHeight: 14, placement: PlantPlacement.ATTACHED, co2Required: false, tempMin: 68, tempMax: 82, phMin: 6, phMax: 7.5, imageUrl: img('plant', 'Java Fern'), description: 'Hardy epiphyte that attaches to hardscape.', careGuide: 'Attach to rock/wood, low light, do not bury rhizome.', propagation: 'Divide rhizome or detach plantlets.', trimmingNeeds: 'Remove old leaves.', nutrientNeeds: 'Low.', substrateNeeds: 'None.', co2Notes: 'Not required.', tags: ['low-light', 'attached', 'beginner'] },
+      { name: 'Anubias Nana', scientificName: 'Anubias barteri var. nana', category: PlantCategory.AQUATIC, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.BEGINNER, lightRequirement: LightLevel.LOW, growthRate: GrowthRate.SLOW, maxHeight: 6, placement: PlantPlacement.ATTACHED, co2Required: false, tempMin: 72, tempMax: 82, phMin: 6, phMax: 7.5, imageUrl: img('plant', 'Anubias Nana'), description: 'Compact hardy epiphyte.', careGuide: 'Attach to hardscape, tolerates low light and herbivores.', propagation: 'Divide rhizome.', trimmingNeeds: 'Remove yellow leaves.', nutrientNeeds: 'Low.', substrateNeeds: 'None.', co2Notes: 'Not required.', tags: ['low-light', 'compact', 'beginner'] },
+      { name: 'Amazon Sword', scientificName: 'Echinodorus amazonicus', category: PlantCategory.AQUATIC, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.BEGINNER, lightRequirement: LightLevel.MEDIUM, growthRate: GrowthRate.MODERATE, maxHeight: 20, placement: PlantPlacement.BACKGROUND, co2Required: false, tempMin: 72, tempMax: 82, phMin: 6.5, phMax: 7.5, imageUrl: img('plant', 'Amazon Sword'), description: 'Classic background sword plant.', careGuide: 'Heavy root feeder, use root tabs.', propagation: 'Runners with plantlets.', trimmingNeeds: 'Remove outer leaves.', nutrientNeeds: 'High root feeding.', substrateNeeds: 'Nutrient-rich or root tabs.', co2Notes: 'Beneficial but optional.', tags: ['background', 'root-feeder', 'beginner'] },
+      { name: 'Java Moss', scientificName: 'Taxiphyllum barbieri', category: PlantCategory.MOSS, habitats: [Habitat.FRESHWATER, Habitat.PALUDARIUM], difficulty: Difficulty.BEGINNER, lightRequirement: LightLevel.LOW, growthRate: GrowthRate.MODERATE, maxHeight: 4, placement: PlantPlacement.ATTACHED, co2Required: false, tempMin: 59, tempMax: 86, phMin: 5, phMax: 8, imageUrl: img('plant', 'Java Moss'), description: 'Versatile moss for any surface.', careGuide: 'Attach anywhere, tolerates wide params.', propagation: 'Divide and reattach.', trimmingNeeds: 'Trim to shape.', nutrientNeeds: 'Low.', substrateNeeds: 'None.', co2Notes: 'Not required.', tags: ['moss', 'shrimp-friendly', 'versatile'] },
+      { name: 'Dwarf Hairgrass', scientificName: 'Eleocharis parvula', category: PlantCategory.AQUATIC, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.INTERMEDIATE, lightRequirement: LightLevel.HIGH, growthRate: GrowthRate.MODERATE, maxHeight: 4, placement: PlantPlacement.FOREGROUND, co2Required: true, tempMin: 68, tempMax: 82, phMin: 6, phMax: 7.5, imageUrl: img('plant', 'Dwarf Hairgrass'), description: 'Carpeting grass for foreground.', careGuide: 'Plant in clumps 1 inch apart, trim regularly.', propagation: 'Runners.', trimmingNeeds: 'Trim to maintain carpet.', nutrientNeeds: 'Moderate-high.', substrateNeeds: 'Fine gravel or aquasoil.', co2Notes: 'Highly recommended.', tags: ['carpet', 'high-light', 'co2'] },
+      { name: 'Pothos', scientificName: 'Epipremnum aureum', category: PlantCategory.TERRESTRIAL, habitats: [Habitat.PALUDARIUM, Habitat.RIPARIUM, Habitat.VIVARIUM], difficulty: Difficulty.BEGINNER, lightRequirement: LightLevel.LOW, growthRate: GrowthRate.FAST, maxHeight: 72, placement: PlantPlacement.BACKGROUND, co2Required: false, tempMin: 65, tempMax: 85, phMin: 6, phMax: 7.5, imageUrl: img('plant', 'Pothos'), description: 'Emersed plant for filters and paludariums.', careGuide: 'Roots in water, leaves above.', propagation: 'Stem cuttings.', trimmingNeeds: 'Trim vines.', nutrientNeeds: 'Low.', substrateNeeds: 'None.', co2Notes: 'Uses atmospheric CO2.', tags: ['terrestrial', 'fast-growing', 'paludarium'] },
+      { name: 'Cryptocoryne Wendtii', scientificName: 'Cryptocoryne wendtii', category: PlantCategory.AQUATIC, habitats: [Habitat.FRESHWATER, Habitat.PALUDARIUM], difficulty: Difficulty.BEGINNER, lightRequirement: LightLevel.LOW, growthRate: GrowthRate.SLOW, maxHeight: 12, placement: PlantPlacement.MIDGROUND, co2Required: false, tempMin: 72, tempMax: 82, phMin: 6, phMax: 8, imageUrl: img('plant', 'Cryptocoryne Wendtii'), description: 'Hardy midground crypt.', careGuide: 'Expect crypt melt after planting. Do not move.', propagation: 'Runners.', trimmingNeeds: 'Remove melted leaves.', nutrientNeeds: 'Moderate.', substrateNeeds: 'Nutrient-rich preferred.', co2Notes: 'Optional.', tags: ['midground', 'low-light', 'crypt-melt'] },
+      { name: 'Water Wisteria', scientificName: 'Hygrophila difformis', category: PlantCategory.AQUATIC, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.BEGINNER, lightRequirement: LightLevel.MEDIUM, growthRate: GrowthRate.FAST, maxHeight: 20, placement: PlantPlacement.BACKGROUND, co2Required: false, tempMin: 72, tempMax: 82, phMin: 6.5, phMax: 7.5, imageUrl: img('plant', 'Water Wisteria'), description: 'Fast-growing stem plant for algae control.', careGuide: 'Plant or float. Absorbs excess nutrients.', propagation: 'Cut tops and replant.', trimmingNeeds: 'Prune tops.', nutrientNeeds: 'Moderate-high.', substrateNeeds: 'Any.', co2Notes: 'Optional.', tags: ['fast-growing', 'stem-plant', 'algae-control'] },
+      { name: 'Vallisneria', scientificName: 'Vallisneria americana', category: PlantCategory.AQUATIC, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.BEGINNER, lightRequirement: LightLevel.LOW, growthRate: GrowthRate.FAST, maxHeight: 24, placement: PlantPlacement.BACKGROUND, co2Required: false, tempMin: 68, tempMax: 82, phMin: 6.5, phMax: 8, imageUrl: img('plant', 'Vallisneria'), description: 'Tall grass-like plant that spreads via runners.', careGuide: 'Good beginner background plant. Sends runners across substrate.', propagation: 'Runners.', trimmingNeeds: 'Trim tall leaves if needed.', nutrientNeeds: 'Low-moderate.', substrateNeeds: 'Any.', co2Notes: 'Not required.', tags: ['background', 'tall', 'fast-growing'] },
+      { name: 'Monte Carlo', scientificName: 'Micranthemum tweediei', category: PlantCategory.AQUATIC, habitats: [Habitat.FRESHWATER], difficulty: Difficulty.INTERMEDIATE, lightRequirement: LightLevel.HIGH, growthRate: GrowthRate.MODERATE, maxHeight: 2, placement: PlantPlacement.FOREGROUND, co2Required: true, tempMin: 68, tempMax: 78, phMin: 6, phMax: 7.2, imageUrl: img('plant', 'Monte Carlo'), description: 'Delicate carpeting plant.', careGuide: 'High light and CO2 required for carpet.', propagation: 'Runners.', trimmingNeeds: 'Trim to encourage spread.', nutrientNeeds: 'Moderate-high.', substrateNeeds: 'Aquasoil preferred.', co2Notes: 'Required.', tags: ['carpet', 'high-light', 'co2'] },
+      { name: 'Bromeliad', scientificName: 'Neoregelia spp.', category: PlantCategory.EPIPHYTE, habitats: [Habitat.VIVARIUM, Habitat.PALUDARIUM], difficulty: Difficulty.INTERMEDIATE, lightRequirement: LightLevel.MEDIUM, growthRate: GrowthRate.SLOW, maxHeight: 8, placement: PlantPlacement.ATTACHED, co2Required: false, tempMin: 70, tempMax: 80, phMin: 5.5, phMax: 7, imageUrl: img('plant', 'Bromeliad'), description: 'Colorful epiphyte for vivariums.', careGuide: 'Keep central cup filled with water, high humidity.', propagation: 'Pups form at base.', trimmingNeeds: 'Remove dead leaves.', nutrientNeeds: 'Low.', substrateNeeds: 'Attached to wood or bark.', co2Notes: 'Uses atmospheric CO2.', tags: ['vivarium', 'epiphyte', 'colorful'] },
+      { name: 'Ficus Pumila', scientificName: 'Ficus pumila', category: PlantCategory.TERRESTRIAL, habitats: [Habitat.VIVARIUM, Habitat.TERRARIUM], difficulty: Difficulty.BEGINNER, lightRequirement: LightLevel.LOW, growthRate: GrowthRate.FAST, maxHeight: 12, placement: PlantPlacement.BACKGROUND, co2Required: false, tempMin: 65, tempMax: 85, phMin: 6, phMax: 7.5, imageUrl: img('plant', 'Ficus Pumila'), description: 'Creeping fig for vivarium backgrounds.', careGuide: 'Climbs backgrounds, trim often.', propagation: 'Stem cuttings.', trimmingNeeds: 'Trim frequently to control size.', nutrientNeeds: 'Low.', substrateNeeds: 'Background or substrate.', co2Notes: 'Atmospheric.', tags: ['vivarium', 'climbing', 'background'] },
+    ],
+  });
 
-  await Promise.all([
-    prisma.product.create({
-      data: {
-        name: 'Fluval 407 Canister Filter',
-        brand: 'Fluval',
-        category: ProductCategory.FILTER,
-        priceRange: PriceRange.MID_RANGE,
-        rating: 4.7,
-        description: 'Reliable canister filter for tanks 50-100 gallons. Flow rate: 383 GPH. Quiet operation with multi-stage filtration. Includes spray bar for even water distribution.',
-        tags: ['canister', 'large-tank', 'quiet', 'multi-stage'],
-      },
-    }),
-    prisma.product.create({
-      data: {
-        name: 'Eheim Jager Aquarium Heater',
-        brand: 'Eheim',
-        category: ProductCategory.HEATER,
-        priceRange: PriceRange.MID_RANGE,
-        rating: 4.5,
-        description: 'Precise, reliable submersible heater with shatterproof glass and thermal safety shutoff. Available in 25W-300W. Calibrated for accuracy within ±0.5°F. Made in Germany.',
-        tags: ['submersible', 'precise', 'reliable', 'safety-shutoff'],
-      },
-    }),
-    prisma.product.create({
-      data: {
-        name: 'Fluval Plant 3.0 LED',
-        brand: 'Fluval',
-        category: ProductCategory.LIGHTING,
-        priceRange: PriceRange.PREMIUM,
-        rating: 4.6,
-        description: 'Full spectrum LED light with Bluetooth app control and programmable schedules. 120-degree light dispersion. Suitable for low to high-light plants depending on tank depth. IP67 waterproof rating.',
-        tags: ['led', 'planted-tank', 'app-controlled', 'programmable', 'full-spectrum'],
-      },
-    }),
-    prisma.product.create({
-      data: {
-        name: 'Seachem Flourite Black',
-        brand: 'Seachem',
-        category: ProductCategory.SUBSTRATE,
-        priceRange: PriceRange.MID_RANGE,
-        rating: 4.4,
-        description: 'Specially fracted clay substrate for planted aquariums. Porous structure provides surface area for beneficial bacteria and root growth. Never needs replacing. Rinse thoroughly before use (very dusty). May temporarily cloud water.',
-        tags: ['planted-tank', 'clay', 'permanent', 'root-growth'],
-      },
-    }),
-    prisma.product.create({
-      data: {
-        name: 'API Freshwater Master Test Kit',
-        brand: 'API',
-        category: ProductCategory.TESTING,
-        priceRange: PriceRange.BUDGET,
-        rating: 4.8,
-        description: 'Essential liquid test kit for monitoring pH (6.0-7.6), high range pH (7.4-8.8), ammonia (0-8 ppm), nitrite (0-5 ppm), and nitrate (0-160 ppm). More accurate than test strips. Includes test tubes, solutions, and color charts.',
-        tags: ['essential', 'water-testing', 'beginner', 'liquid-test', 'accurate'],
-      },
-    }),
-    prisma.product.create({
-      data: {
-        name: 'Seachem Prime',
-        brand: 'Seachem',
-        category: ProductCategory.WATER_TREATMENT,
-        priceRange: PriceRange.BUDGET,
-        rating: 4.9,
-        description: 'Complete water conditioner that removes chlorine and chloramine, detoxifies ammonia, nitrite, and nitrate for 24-48 hours. Concentrated formula (5ml treats 50 gallons). Safe for fish, plants, and invertebrates. Does not affect pH.',
-        tags: ['essential', 'water-conditioner', 'beginner', 'concentrated', 'detoxifier'],
-      },
-    }),
-    prisma.product.create({
-      data: {
-        name: 'Aqueon QuietFlow LED PRO Power Filter',
-        brand: 'Aqueon',
-        category: ProductCategory.FILTER,
-        priceRange: PriceRange.BUDGET,
-        rating: 4.3,
-        description: 'Hang-on-back filter for tanks 10-75 gallons. LED indicator shows when cartridge needs changing. Multi-stage filtration with mechanical, chemical, and biological media. Quiet operation.',
-        tags: ['hob', 'budget', 'led-indicator', 'multi-stage'],
-      },
-    }),
-    prisma.product.create({
-      data: {
-        name: 'Fluval Spec V Aquarium Kit',
-        brand: 'Fluval',
-        category: ProductCategory.OTHER,
-        priceRange: PriceRange.MID_RANGE,
-        rating: 4.5,
-        description: '5-gallon nano aquarium kit with integrated filtration and LED lighting. Sleek aluminum housing. Perfect for bettas or small shrimp colonies. Includes pump, filter media, and foam block.',
-        tags: ['nano', 'kit', 'betta', 'shrimp', 'all-in-one'],
-      },
-    }),
-  ]);
-
-  const [neon, betta, cory, cherry, angel, discus, amano, gecko, cardinal, bristlenose] = animals;
-
-  await Promise.all([
-    prisma.animalCompatibility.create({
-      data: {
-        animalAId: neon.id,
-        animalBId: cory.id,
-        level: CompatibilityLevel.COMPATIBLE,
-        notes: 'Excellent community tank mates. Tetras occupy mid-water, corydoras stay at bottom. Both peaceful and have similar temperature/pH requirements.',
-      },
-    }),
-    prisma.animalCompatibility.create({
-      data: {
-        animalAId: neon.id,
-        animalBId: cherry.id,
-        level: CompatibilityLevel.COMPATIBLE,
-        notes: 'Great combination. Tetras are peaceful and won\'t bother adult shrimp. Provide plants/moss for shrimp cover. Shrimp help with cleanup.',
-      },
-    }),
-    prisma.animalCompatibility.create({
-      data: {
-        animalAId: betta.id,
-        animalBId: neon.id,
-        level: CompatibilityLevel.CAUTION,
-        notes: 'Can work in tanks 20+ gallons with plenty of plants and hiding spots. Bettas may nip at tetra fins, especially in smaller tanks. Monitor closely.',
-      },
-    }),
-    prisma.animalCompatibility.create({
-      data: {
-        animalAId: betta.id,
-        animalBId: cherry.id,
-        level: CompatibilityLevel.CAUTION,
-        notes: 'Bettas may hunt and eat small shrimp, especially juveniles. Heavily planted tanks with moss improve shrimp survival. Individual betta temperament varies.',
-      },
-    }),
-    prisma.animalCompatibility.create({
-      data: {
-        animalAId: betta.id,
-        animalBId: betta.id,
-        level: CompatibilityLevel.INCOMPATIBLE,
-        notes: 'Male bettas will fight to the death. Never house two males together. Female sororities require experienced keepers and 20+ gallon tanks with many hiding spots.',
-      },
-    }),
-    prisma.animalCompatibility.create({
-      data: {
-        animalAId: angel.id,
-        animalBId: neon.id,
-        level: CompatibilityLevel.CAUTION,
-        notes: 'Adult angelfish may eat small tetras that fit in their mouths. Best if raised together from young. Larger tanks (40+ gallons) with dense planting reduce predation risk.',
-      },
-    }),
-    prisma.animalCompatibility.create({
-      data: {
-        animalAId: cory.id,
-        animalBId: cherry.id,
-        level: CompatibilityLevel.COMPATIBLE,
-        notes: 'Both peaceful bottom dwellers. Corydoras won\'t bother shrimp. Provide hiding spots for shrimp molting. Both appreciate similar water conditions.',
-      },
-    }),
-    prisma.animalCompatibility.create({
-      data: {
-        animalAId: neon.id,
-        animalBId: cardinal.id,
-        level: CompatibilityLevel.COMPATIBLE,
-        notes: 'Can school together peacefully. Both occupy similar mid-water space. Cardinals prefer slightly warmer, more acidic water. School of 6+ of each species recommended.',
-      },
-    }),
-    prisma.animalCompatibility.create({
-      data: {
-        animalAId: cory.id,
-        animalBId: bristlenose.id,
-        level: CompatibilityLevel.COMPATIBLE,
-        notes: 'Excellent bottom-dwelling combination. Both peaceful algae eaters with different feeding behaviors. Ensure adequate food for both species.',
-      },
-    }),
-    prisma.animalCompatibility.create({
-      data: {
-        animalAId: cherry.id,
-        animalBId: amano.id,
-        level: CompatibilityLevel.COMPATIBLE,
-        notes: 'Both peaceful shrimp species. Amanos are larger and won\'t compete directly. Excellent algae-eating team. Ensure adequate biofilm and supplemental feeding.',
-      },
-    }),
-    prisma.animalCompatibility.create({
-      data: {
-        animalAId: angel.id,
-        animalBId: cherry.id,
-        level: CompatibilityLevel.INCOMPATIBLE,
-        notes: 'Angelfish will eat cherry shrimp, especially juveniles. Even adult shrimp are at risk. Not recommended unless you accept shrimp as live food.',
-      },
-    }),
-    prisma.animalCompatibility.create({
-      data: {
-        animalAId: discus.id,
-        animalBId: neon.id,
-        level: CompatibilityLevel.INCOMPATIBLE,
-        notes: 'Discus require much higher temperatures (82-88°F) than neon tetras prefer (68-79°F). Discus may also eat small tetras. Incompatible temperature requirements.',
-      },
-    }),
-  ]);
+  await prisma.product.createMany({
+    data: [
+      { name: 'Fluval 407 Canister Filter', brand: 'Fluval', category: ProductCategory.FILTER, description: 'Reliable canister filter for tanks 50-100 gallons. 383 GPH, quiet, multi-stage.', imageUrl: img('product', 'Fluval 407'), priceRange: PriceRange.MID_RANGE, rating: 4.7, tags: ['canister', 'large-tank', 'quiet'] },
+      { name: 'Eheim Jager Heater', brand: 'Eheim', category: ProductCategory.HEATER, description: 'Precise submersible heater with shatterproof glass and thermal shutoff.', imageUrl: img('product', 'Eheim Jager'), priceRange: PriceRange.MID_RANGE, rating: 4.5, tags: ['submersible', 'reliable'] },
+      { name: 'Fluval Plant 3.0 LED', brand: 'Fluval', category: ProductCategory.LIGHTING, description: 'Full spectrum LED with Bluetooth control. For low to high-light plants.', imageUrl: img('product', 'Fluval Plant LED'), priceRange: PriceRange.PREMIUM, rating: 4.6, tags: ['led', 'planted-tank', 'app-controlled'] },
+      { name: 'Seachem Flourite Black', brand: 'Seachem', category: ProductCategory.SUBSTRATE, description: 'Clay-based planted tank substrate. Porous, permanent, rinse well.', imageUrl: img('product', 'Flourite'), priceRange: PriceRange.MID_RANGE, rating: 4.4, tags: ['planted-tank', 'clay', 'permanent'] },
+      { name: 'API Freshwater Master Test Kit', brand: 'API', category: ProductCategory.TESTING, description: 'Liquid test kit for pH, ammonia, nitrite, nitrate. More accurate than strips.', imageUrl: img('product', 'API Test Kit'), priceRange: PriceRange.BUDGET, rating: 4.8, tags: ['essential', 'water-testing', 'accurate'] },
+      { name: 'Seachem Prime', brand: 'Seachem', category: ProductCategory.WATER_TREATMENT, description: 'Conditioner removes chlorine/chloramine and detoxifies ammonia/nitrite.', imageUrl: img('product', 'Prime'), priceRange: PriceRange.BUDGET, rating: 4.9, tags: ['essential', 'water-conditioner'] },
+      { name: 'Aqueon QuietFlow HOB', brand: 'Aqueon', category: ProductCategory.FILTER, description: 'Hang-on-back filter for 10-75 gallon tanks. LED cartridge indicator.', imageUrl: img('product', 'Aqueon HOB'), priceRange: PriceRange.BUDGET, rating: 4.3, tags: ['hob', 'budget', 'led-indicator'] },
+      { name: 'Fluval Spec V Kit', brand: 'Fluval', category: ProductCategory.OTHER, description: '5-gallon nano kit with filtration and LED. Perfect for bettas or shrimp.', imageUrl: img('product', 'Fluval Spec V'), priceRange: PriceRange.MID_RANGE, rating: 4.5, tags: ['nano', 'kit', 'betta', 'shrimp'] },
+      { name: 'Tetra Whisper Air Pump', brand: 'Tetra', category: ProductCategory.AIR_PUMP, description: 'Quiet air pump for sponge filters and airstones.', imageUrl: img('product', 'Air Pump'), priceRange: PriceRange.BUDGET, rating: 4.2, tags: ['air-pump', 'quiet', 'sponge-filter'] },
+      { name: 'Aquarium Co-Op Easy Green', brand: 'Aquarium Co-Op', category: ProductCategory.WATER_TREATMENT, description: 'All-in-one liquid fertilizer for planted tanks.', imageUrl: img('product', 'Easy Green'), priceRange: PriceRange.MID_RANGE, rating: 4.6, tags: ['fertilizer', 'planted-tank', 'all-in-one'] },
+      { name: 'Fluval CO2 Kit', brand: 'Fluval', category: ProductCategory.CO2_SYSTEM, description: 'Compact disposable CO2 system for small planted tanks.', imageUrl: img('product', 'CO2 Kit'), priceRange: PriceRange.MID_RANGE, rating: 4.1, tags: ['co2', 'planted-tank', 'small-tank'] },
+      { name: 'Omega One Flakes', brand: 'Omega One', category: ProductCategory.FOOD, description: 'High-quality fish flake food with whole seafood ingredients.', imageUrl: img('product', 'Omega One Flakes'), priceRange: PriceRange.MID_RANGE, rating: 4.7, tags: ['food', 'flakes', 'high-quality'] },
+    ],
+  });
 
   console.log('Seed complete!');
-  console.log(`  Animals: ${animals.length}`);
-  console.log(`  Plants: ${plants.length}`);
-  console.log(`  Products: 8`);
-  console.log(`  Compatibility rules: 12`);
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
+  .catch((e) => { console.error(e); process.exit(1); })
   .finally(() => prisma.$disconnect());
