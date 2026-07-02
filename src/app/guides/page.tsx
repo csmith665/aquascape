@@ -51,6 +51,13 @@ export default function GuidesPage() {
       readTime: '12 min',
       href: '/articles/environments',
     },
+    {
+      title: 'Upkeep Requirements',
+      description: 'Daily, weekly, monthly, and seasonal care routines for aquariums, vivariums, terrariums, and more.',
+      difficulty: 'Beginner',
+      readTime: '10 min',
+      href: '/articles/upkeep-requirements',
+    },
   ];
 
   return (
