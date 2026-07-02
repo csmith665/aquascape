@@ -205,6 +205,7 @@ model BuilderProject {
   id              String   @id @default(cuid())
   name            String
   type            SetupType
+  biome           Biome?
   tankSize        Int
   length          Float?
   width           Float?

@@ -1,13 +1,14 @@
 'use server';
 
 import { prisma } from '@/lib/db';
-import { Difficulty, SetupType, MaintenanceLevel, ProductCategory, Habitat } from '@prisma/client';
+import { Difficulty, SetupType, MaintenanceLevel, ProductCategory, Habitat, Biome } from '@prisma/client';
 import { assessCompatibility } from '@/lib/compatibility';
 import { z } from 'zod';
 
 const buildSchema = z.object({
   name: z.string().min(1).max(100),
   type: z.nativeEnum(SetupType),
+  biome: z.nativeEnum(Biome).optional(),
   tankSize: z.coerce.number().min(1).max(1000),
   skillLevel: z.nativeEnum(Difficulty),
   maintenancePref: z.nativeEnum(MaintenanceLevel),
@@ -29,6 +30,7 @@ export async function buildRecommendation(formData: FormData) {
   const data = buildSchema.parse({
     name: formData.get('name'),
     type: formData.get('type'),
+    biome: formData.get('biome') || undefined,
     tankSize: formData.get('tankSize'),
     skillLevel: formData.get('skillLevel'),
     maintenancePref: formData.get('maintenancePref'),
@@ -37,11 +39,12 @@ export async function buildRecommendation(formData: FormData) {
   const allowedHabitats = setupToHabitat[data.type];
   const difficultyRank = { BEGINNER: 1, INTERMEDIATE: 2, ADVANCED: 3, EXPERT: 4 };
 
-  // Animals matching setup habitat and tank size
+  // Animals matching setup habitat, biome, and tank size
   const animals = await prisma.animal.findMany({
     where: {
       habitats: { hasSome: allowedHabitats },
       minTankSize: { lte: data.tankSize },
+      biome: data.biome ? data.biome : undefined,
     },
     orderBy: { difficulty: 'asc' },
   });
@@ -50,10 +53,11 @@ export async function buildRecommendation(formData: FormData) {
     (a) => difficultyRank[a.difficulty] <= difficultyRank[data.skillLevel] + 1
   );
 
-  // Plants matching setup habitat and skill level
+  // Plants matching setup habitat, biome, and skill level
   const plants = await prisma.plant.findMany({
     where: {
       habitats: { hasSome: allowedHabitats },
+      biome: data.biome ? data.biome : undefined,
     },
     orderBy: { difficulty: 'asc' },
   });
@@ -88,6 +92,7 @@ export async function buildRecommendation(formData: FormData) {
     data: {
       name: data.name,
       type: data.type,
+      biome: data.biome,
       tankSize: data.tankSize,
       skillLevel: data.skillLevel,
       maintenancePref: data.maintenancePref,

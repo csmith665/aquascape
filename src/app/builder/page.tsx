@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Biome } from '@prisma/client';
 import { buildRecommendation, BuildResult } from './actions';
 
 export default function BuilderPage() {
@@ -58,6 +59,26 @@ export default function BuilderPage() {
                 <option value="VIVARIUM">Vivarium</option>
                 <option value="TERRARIUM">Terrarium</option>
               </select>
+            </div>
+
+            <div style={{ marginTop: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                Environment / Biome <span style={{ fontWeight: 400, color: '#666' }}>(optional)</span>
+              </label>
+              <select
+                name="biome"
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #ddd' }}
+              >
+                <option value="">Any environment</option>
+                {Object.values(Biome).map((b) => (
+                  <option key={b} value={b}>
+                    {b.replace(/_/g, ' ')}
+                  </option>
+                ))}
+              </select>
+              <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.5rem' }}>
+                Narrow results to a specific environment like Desert, Tropical Rainforest, or River.
+              </p>
             </div>
 
             <div style={{ marginTop: '1.5rem' }}>
@@ -121,6 +142,13 @@ export default function BuilderPage() {
       {result && (
         <section className="section">
           <h2>Recommendations for {result.project.name}</h2>
+          <p style={{ color: '#5f6f81', marginBottom: '1.5rem' }}>
+            {result.project.type.replace('_', ' ')}
+            {result.project.biome && (
+              <> · {result.project.biome.replace(/_/g, ' ')}</>
+            )}
+            {' · '}{result.project.tankSize} gallons
+          </p>
 
           {result.warnings.length > 0 && (
             <div className="card" style={{ background: '#fff3cd', color: '#856404', marginBottom: '1.5rem' }}>
