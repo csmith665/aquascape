@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { Difficulty, PlantCategory, LightLevel, Habitat } from '@prisma/client';
+import { Difficulty, PlantCategory, LightLevel, Habitat, Biome } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +12,7 @@ export default async function PlantsPage({
   const difficulty = typeof searchParams.difficulty === 'string' ? searchParams.difficulty : undefined;
   const light = typeof searchParams.light === 'string' ? searchParams.light : undefined;
   const habitat = typeof searchParams.habitat === 'string' ? searchParams.habitat : undefined;
+  const biome = typeof searchParams.biome === 'string' ? searchParams.biome : undefined;
   const search = typeof searchParams.search === 'string' ? searchParams.search : undefined;
 
   const plants = await prisma.plant.findMany({
@@ -77,6 +78,15 @@ export default async function PlantsPage({
               </select>
             </div>
             <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Environment / Biome</label>
+              <select name="biome" defaultValue={biome} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}>
+                <option value="">All</option>
+                {Object.values(Biome).map((b) => (
+                  <option key={b} value={b}>{b.replace(/_/g, ' ')}</option>
+                ))}
+              </select>
+            </div>
+            <div>
               <button type="submit" className="btn">Filter</button>
               <a href="/plants" className="btn btn-secondary" style={{ marginLeft: '0.5rem' }}>Clear</a>
             </div>
@@ -98,6 +108,9 @@ export default async function PlantsPage({
                 <span className={`badge badge-${plant.difficulty.toLowerCase()}`}>{plant.difficulty}</span>
                 <span className="badge" style={{ background: '#fff4e6', color: '#d97706' }}>{plant.lightRequirement} Light</span>
                 {plant.co2Required && <span className="badge" style={{ background: '#fce7f3', color: '#be185d' }}>CO2</span>}
+                {plant.biome && (
+                  <span className="badge" style={{ background: '#fef3c7', color: '#92400e' }}>{plant.biome.replace(/_/g, ' ')}</span>
+                )}
               </div>
               <div style={{ marginTop: '0.75rem', fontSize: '0.9rem' }}>
                 {plant.placement && <p><strong>Placement:</strong> {plant.placement}</p>}

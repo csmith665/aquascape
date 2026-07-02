@@ -14,6 +14,7 @@ model Animal {
   scientificName  String?
   category        AnimalCategory
   habitats        Habitat[]
+  biome           Biome    @default(UNKNOWN)
   description     String?
   imageUrl        String?
   minTankSize     Int?
@@ -85,6 +86,7 @@ model Plant {
   scientificName  String?
   category        PlantCategory
   habitats        Habitat[]
+  biome           Biome    @default(UNKNOWN)
   description     String?
   imageUrl        String?
   lightRequirement LightLevel
@@ -286,6 +288,28 @@ enum Habitat {
   TERRARIUM
   RIPARIUM
   POND
+}
+
+enum Biome {
+  TROPICAL_RAINFOREST
+  CLOUD_FOREST
+  WETLAND
+  SWAMP
+  RIVER
+  STREAM
+  LAKE
+  POND
+  REEF
+  MARINE
+  MANGROVE
+  BRACKISH_ESTUARY
+  DESERT
+  ARID_GRASSLAND
+  SAVANNA
+  TEMPERATE_FOREST
+  GRASSLAND
+  TUNDRA
+  UNKNOWN
 }
 
 model WaterParameterLog {

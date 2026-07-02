@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { Difficulty, AnimalCategory, Habitat } from '@prisma/client';
+import { Difficulty, AnimalCategory, Habitat, Biome } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +11,7 @@ export default async function AnimalsPage({
   const category = typeof searchParams.category === 'string' ? searchParams.category : undefined;
   const difficulty = typeof searchParams.difficulty === 'string' ? searchParams.difficulty : undefined;
   const habitat = typeof searchParams.habitat === 'string' ? searchParams.habitat : undefined;
+  const biome = typeof searchParams.biome === 'string' ? searchParams.biome : undefined;
   const search = typeof searchParams.search === 'string' ? searchParams.search : undefined;
 
   const animals = await prisma.animal.findMany({
@@ -19,6 +20,7 @@ export default async function AnimalsPage({
         category ? { category: category as AnimalCategory } : {},
         difficulty ? { difficulty: difficulty as Difficulty } : {},
         habitat ? { habitats: { has: habitat as Habitat } } : {},
+        biome ? { biome: biome as Biome } : {},
         search
           ? {
               OR: [
@@ -75,6 +77,15 @@ export default async function AnimalsPage({
               </select>
             </div>
             <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Environment / Biome</label>
+              <select name="biome" defaultValue={biome} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}>
+                <option value="">All</option>
+                {Object.values(Biome).map((b) => (
+                  <option key={b} value={b}>{b.replace(/_/g, ' ')}</option>
+                ))}
+              </select>
+            </div>
+            <div>
               <button type="submit" className="btn">Filter</button>
               <a href="/animals" className="btn btn-secondary" style={{ marginLeft: '0.5rem' }}>Clear</a>
             </div>
@@ -98,6 +109,9 @@ export default async function AnimalsPage({
                 {animal.habitats.map((h) => (
                   <span key={h} className="badge" style={{ background: '#d1fae5', color: '#065f46' }}>{h.replace('_', ' ')}</span>
                 ))}
+                {animal.biome && (
+                  <span className="badge" style={{ background: '#fef3c7', color: '#92400e' }}>{animal.biome.replace(/_/g, ' ')}</span>
+                )}
               </div>
               <div style={{ marginTop: '0.75rem', fontSize: '0.9rem' }}>
                 {animal.minTankSize && <p><strong>Min Tank:</strong> {animal.minTankSize} gal</p>}
