@@ -2,10 +2,13 @@ import { PrismaClient, Difficulty, AnimalCategory, Temperament, DietType, PlantC
 
 const prisma = new PrismaClient();
 
-// External placeholder images keep the database small — only URLs are stored
+// Inline SVG placeholders avoid external network dependencies and work offline.
 const img = (type: 'animal' | 'plant' | 'product', name: string) => {
-  const colors = { animal: '1a5490', plant: '2d5a27', product: '666666' };
-  return `https://placehold.co/400x300/${colors[type]}/ffffff?text=${encodeURIComponent(name)}`;
+  const colors = { animal: '#1a5490', plant: '#2d5a27', product: '#666666' };
+  const bg = colors[type];
+  const safeName = name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="${bg}"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" font-weight="bold">${safeName}</text></svg>`;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 };
 
 async function main() {
