@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/db';
 import { Difficulty, SetupType, MaintenanceLevel, ProductCategory, Habitat } from '@prisma/client';
+import { assessCompatibility } from '@/lib/compatibility';
 import { z } from 'zod';
 
 const buildSchema = z.object({
@@ -93,17 +94,19 @@ export async function buildRecommendation(formData: FormData) {
     },
   });
 
+  const warnings = await generateWarnings(data, suitableAnimals.slice(0, 8));
+
   return {
     project,
     params: data,
     animals: suitableAnimals.slice(0, 8),
     plants: suitablePlants.slice(0, 8),
     products: products.slice(0, 8),
-    warnings: generateWarnings(data, suitableAnimals),
+    warnings,
   };
 }
 
-function generateWarnings(
+async function generateWarnings(
   data: z.infer<typeof buildSchema>,
   animals: Awaited<ReturnType<typeof prisma.animal.findMany>>
 ) {
@@ -124,6 +127,33 @@ function generateWarnings(
   const vivariumTypes: SetupType[] = [SetupType.VIVARIUM, SetupType.TERRARIUM];
   if (vivariumTypes.includes(data.type) && data.tankSize < 10) {
     warnings.push('Vivariums/terrariums benefit from more space for temperature gradients and hiding spots.');
+  }
+
+  // Check compatibility between recommended animals
+  if (animals.length > 1) {
+    const animalIds = animals.map((a) => a.id);
+    const explicitRules = await prisma.animalCompatibility.findMany({
+      where: {
+        animalAId: { in: animalIds },
+        animalBId: { in: animalIds },
+      },
+    });
+
+    const ruleKey = (a: string, b: string) => [a, b].sort().join('|');
+    const rules = new Map(explicitRules.map((r) => [ruleKey(r.animalAId, r.animalBId), r]));
+
+    for (let i = 0; i < animals.length; i++) {
+      for (let j = i + 1; j < animals.length; j++) {
+        const a = animals[i];
+        const b = animals[j];
+        const key = ruleKey(a.id, b.id);
+        const rule = rules.get(key);
+        const { level, notes } = assessCompatibility(a, b, rule?.level, rule?.notes);
+        if (level !== 'COMPATIBLE') {
+          warnings.push(`${a.name} + ${b.name}: ${notes.join(' ')}`);
+        }
+      }
+    }
   }
 
   return warnings;

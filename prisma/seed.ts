@@ -207,6 +207,84 @@ async function main() {
     ],
   });
 
+  // Seed explicit animal-to-animal compatibility rules.
+  // These supplement the rule-based compatibility checker in the app.
+  const compatPairs: [string, string, CompatibilityLevel, string][] = [
+    ['Neon Tetra', 'Cardinal Tetra', CompatibilityLevel.COMPATIBLE, 'Both small peaceful South American schooling tetras.'],
+    ['Neon Tetra', 'Betta Fish', CompatibilityLevel.CAUTION, 'Betta may nip or eat small neons; neons may nip long fins in small tanks.'],
+    ['Neon Tetra', 'Corydoras Catfish', CompatibilityLevel.COMPATIBLE, 'Peaceful bottom dweller, similar water parameters.'],
+    ['Neon Tetra', 'Harlequin Rasbora', CompatibilityLevel.COMPATIBLE, 'Both peaceful schooling fish from similar conditions.'],
+    ['Neon Tetra', 'Angelfish', CompatibilityLevel.INCOMPATIBLE, 'Angelfish will eat neon tetras as they grow.'],
+    ['Neon Tetra', 'Discus', CompatibilityLevel.CAUTION, 'Discus need much warmer water; neons prefer cooler temperatures.'],
+    ['Cardinal Tetra', 'Discus', CompatibilityLevel.COMPATIBLE, 'Cardinals tolerate the high temperatures discus require.'],
+    ['Betta Fish', 'Corydoras Catfish', CompatibilityLevel.COMPATIBLE, 'Corydoras are peaceful bottom dwellers that ignore bettas.'],
+    ['Betta Fish', 'Amano Shrimp', CompatibilityLevel.COMPATIBLE, 'Amano shrimp are usually too large for bettas to eat.'],
+    ['Betta Fish', 'Cherry Shrimp', CompatibilityLevel.CAUTION, 'Betta may hunt and eat cherry shrimp, especially juveniles.'],
+    ['Betta Fish', 'Guppy', CompatibilityLevel.CAUTION, 'Betta may see colorful male guppies as rivals and attack them.'],
+    ['Betta Fish', 'Tiger Barb', CompatibilityLevel.INCOMPATIBLE, 'Tiger barbs are fin nippers and will harass bettas.'],
+    ['Betta Fish', 'Dwarf Gourami', CompatibilityLevel.INCOMPATIBLE, 'Two labyrinth fish with similar body shapes will fight.'],
+    ['Corydoras Catfish', 'Bristlenose Pleco', CompatibilityLevel.COMPATIBLE, 'Both peaceful bottom dwellers with similar diets.'],
+    ['Corydoras Catfish', 'Amano Shrimp', CompatibilityLevel.COMPATIBLE, 'Peaceful scavengers that occupy different niches.'],
+    ['Bristlenose Pleco', 'Angelfish', CompatibilityLevel.COMPATIBLE, 'Both South American, peaceful, and tolerate similar water.'],
+    ['Angelfish', 'Harlequin Rasbora', CompatibilityLevel.COMPATIBLE, 'Rasboras are large enough to avoid being eaten by angelfish.'],
+    ['Angelfish', 'Tiger Barb', CompatibilityLevel.INCOMPATIBLE, 'Tiger barbs nip angelfish fins.'],
+    ['Angelfish', 'German Blue Ram', CompatibilityLevel.COMPATIBLE, 'Both peaceful South American dwarf cichlids.'],
+    ['Discus', 'German Blue Ram', CompatibilityLevel.CAUTION, 'Rams are much smaller and may be intimidated by large discus.'],
+    ['Discus', 'Cardinal Tetra', CompatibilityLevel.COMPATIBLE, 'Classic discus tankmate; tolerates high temperatures.'],
+    ['Guppy', 'Platy', CompatibilityLevel.COMPATIBLE, 'Both peaceful livebearers with similar care needs.'],
+    ['Guppy', 'Swordtail', CompatibilityLevel.COMPATIBLE, 'Both peaceful livebearers; swordtails are slightly larger.'],
+    ['Guppy', 'Molly', CompatibilityLevel.COMPATIBLE, 'Both peaceful livebearers, though mollies prefer harder water.'],
+    ['Guppy', 'Tiger Barb', CompatibilityLevel.INCOMPATIBLE, 'Tiger barbs nip the long fins of male guppies.'],
+    ['Tiger Barb', 'Cherry Shrimp', CompatibilityLevel.INCOMPATIBLE, 'Tiger barbs will eat shrimp and nip fins.'],
+    ['Tiger Barb', 'Otocinclus Catfish', CompatibilityLevel.CAUTION, 'Otos are peaceful and may be stressed by active barbs.'],
+    ['Rainbowfish', 'Corydoras Catfish', CompatibilityLevel.COMPATIBLE, 'Both active peaceful community fish.'],
+    ['Rainbowfish', 'Angelfish', CompatibilityLevel.CAUTION, 'Rainbowfish are fast feeders and may outcompete angelfish.'],
+    ['Clownfish', 'Green Star Polyp', CompatibilityLevel.COMPATIBLE, 'Clownfish may host in or near soft corals.'],
+    ['Cherry Shrimp', 'Amano Shrimp', CompatibilityLevel.COMPATIBLE, 'Both peaceful shrimp species.'],
+    ['Cherry Shrimp', 'Nerite Snail', CompatibilityLevel.COMPATIBLE, 'Peaceful invertebrates that do not bother each other.'],
+    ['Amano Shrimp', 'Nerite Snail', CompatibilityLevel.COMPATIBLE, 'Peaceful algae-eating invertebrates.'],
+    ['Otocinclus Catfish', 'Amano Shrimp', CompatibilityLevel.COMPATIBLE, 'Both peaceful algae eaters.'],
+    ['Kuhli Loach', 'Corydoras Catfish', CompatibilityLevel.COMPATIBLE, 'Both peaceful bottom-dwelling scavengers.'],
+    ['Kuhli Loach', 'Cherry Shrimp', CompatibilityLevel.CAUTION, 'Kuhlis may eat small shrimp or shrimp fry.'],
+    ['African Dwarf Frog', 'Betta Fish', CompatibilityLevel.CAUTION, 'Betta may outcompete the slow frog for food.'],
+    ['African Dwarf Frog', 'Cherry Shrimp', CompatibilityLevel.INCOMPATIBLE, 'Frogs will eat small shrimp.'],
+    ['Axolotl', 'Cherry Shrimp', CompatibilityLevel.INCOMPATIBLE, 'Axolotls will eat shrimp and require much colder water.'],
+    ['Axolotl', 'Neon Tetra', CompatibilityLevel.INCOMPATIBLE, 'Axolotls require cold water and may eat tetras.'],
+    ['Axolotl', 'White Tree Frog', CompatibilityLevel.INCOMPATIBLE, 'Completely different habitats and temperatures.'],
+    ['Leopard Gecko', 'Bearded Dragon', CompatibilityLevel.INCOMPATIBLE, 'Different habitats, sizes, and diets; beardies may eat geckos.'],
+    ['Leopard Gecko', 'Crested Gecko', CompatibilityLevel.INCOMPATIBLE, 'Different humidity and temperature requirements.'],
+    ['Bearded Dragon', 'Ball Python', CompatibilityLevel.INCOMPATIBLE, 'Different habitats and diets; do not co-house reptiles.'],
+    ['Crested Gecko', 'Poison Dart Frog', CompatibilityLevel.CAUTION, 'Frogs need much higher humidity and smaller food items.'],
+    ['Poison Dart Frog', 'White Tree Frog', CompatibilityLevel.CAUTION, 'Different temperature and humidity preferences.'],
+    ['White Tree Frog', 'Fire-Bellied Toad', CompatibilityLevel.CAUTION, 'Different temperature ranges; fire-bellied toads prefer cooler water.'],
+    ['Praying Mantis', 'Stick Insect', CompatibilityLevel.INCOMPATIBLE, 'Mantis is a predator and will eat stick insects.'],
+    ['Tarantula', 'Madagascar Hissing Cockroach', CompatibilityLevel.INCOMPATIBLE, 'Cockroach is a potential prey item, not a tank mate.'],
+    ['Dubia Roach Colony', 'Madagascar Hissing Cockroach', CompatibilityLevel.INCOMPATIBLE, 'Different species colonies should not be mixed.'],
+  ];
+
+  const animals = await prisma.animal.findMany({ select: { id: true, name: true } });
+  const animalIdByName = new Map(animals.map((a) => [a.name, a.id]));
+
+  const compatData = compatPairs
+    .map(([aName, bName, level, notes]) => {
+      const animalAId = animalIdByName.get(aName);
+      const animalBId = animalIdByName.get(bName);
+      if (!animalAId || !animalBId) {
+        console.warn(`Skipping compatibility pair: ${aName} / ${bName} (not found)`);
+        return null;
+      }
+      return { animalAId, animalBId, level, notes };
+    })
+    .filter((d): d is NonNullable<typeof d> => d !== null);
+
+  if (compatData.length > 0) {
+    await prisma.animalCompatibility.createMany({
+      data: compatData,
+      skipDuplicates: true,
+    });
+    console.log(`Seeded ${compatData.length} compatibility rules.`);
+  }
+
   console.log('Seed complete!');
 }
 

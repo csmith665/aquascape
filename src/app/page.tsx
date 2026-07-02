@@ -44,6 +44,14 @@ export default function HomePage() {
           </div>
 
           <div className="card">
+            <h3>Compatibility Checker</h3>
+            <p>Check whether two animals can live together based on temperament, size, and water needs.</p>
+            <Link href="/compatibility" className="btn" style={{ marginTop: '1rem' }}>
+              Check Pairings
+            </Link>
+          </div>
+
+          <div className="card">
             <h3>Track Your Tanks</h3>
             <p>Log water parameters, maintenance, and feeding. Monitor livestock health over time.</p>
             <Link href="/tracking" className="btn" style={{ marginTop: '1rem' }}>
