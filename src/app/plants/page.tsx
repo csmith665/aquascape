@@ -106,7 +106,7 @@ export default async function PlantsPage({
               <p style={{ marginTop: '0.5rem', fontSize: '0.95rem' }}>{plant.description}</p>
               <div style={{ marginTop: '0.75rem' }}>
                 <span className={`badge badge-${plant.difficulty.toLowerCase()}`}>{plant.difficulty}</span>
-                <span className="badge" style={{ background: '#fff4e6', color: '#d97706' }}>{plant.lightRequirement} Light</span>
+                <span className="badge" style={{ background: '#fff4e6', color: '#92400e' }}>{plant.lightRequirement} Light</span>
                 {plant.co2Required && <span className="badge" style={{ background: '#fce7f3', color: '#be185d' }}>CO2</span>}
                 {plant.biome && (
                   <span className="badge" style={{ background: '#fef3c7', color: '#92400e' }}>{plant.biome.replace(/_/g, ' ')}</span>

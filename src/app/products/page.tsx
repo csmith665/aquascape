@@ -84,7 +84,7 @@ export default async function ProductsPage({
               <div style={{ marginTop: '0.75rem' }}>
                 <span className="badge" style={{ background: '#e7f3ff', color: '#1a5490' }}>{product.category.replace('_', ' ')}</span>
                 {product.priceRange && <span className="badge" style={{ background: '#d1fae5', color: '#065f46' }}>{product.priceRange.replace('_', ' ')}</span>}
-                {product.rating && <span className="badge" style={{ background: '#fff4e6', color: '#d97706' }}>★ {product.rating}</span>}
+                {product.rating && <span className="badge" style={{ background: '#fff4e6', color: '#92400e' }}>★ {product.rating}</span>}
               </div>
             </div>
           ))}

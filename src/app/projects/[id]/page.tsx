@@ -119,7 +119,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
                 <p style={{ fontSize: '0.9rem' }}>Quantity: {entry.quantity}</p>
                 {entry.plant && (
                   <div style={{ marginTop: '0.5rem' }}>
-                    <span className="badge" style={{ background: '#fff4e6', color: '#d97706' }}>
+                    <span className="badge" style={{ background: '#fff4e6', color: '#92400e' }}>
                       {entry.plant.lightRequirement.replace('_', ' ')} Light
                     </span>
                   </div>
@@ -158,7 +158,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
           </p>
           <form action={deleteProject} style={{ marginTop: '1rem' }}>
             <input type="hidden" name="id" value={project.id} />
-            <button type="submit" className="btn" style={{ background: '#dc3545' }}>
+            <button type="submit" className="btn" style={{ background: '#b91c1c' }}>
               Delete Build
             </button>
           </form>

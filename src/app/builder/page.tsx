@@ -195,7 +195,7 @@ export default function BuilderPage() {
                 <p style={{ fontSize: '0.9rem' }}>{plant.description?.slice(0, 120)}...</p>
                 <div style={{ marginTop: '0.75rem' }}>
                   <span className={`badge badge-${plant.difficulty.toLowerCase()}`}>{plant.difficulty}</span>
-                  <span className="badge" style={{ background: '#fff4e6', color: '#d97706' }}>
+                  <span className="badge" style={{ background: '#fff4e6', color: '#92400e' }}>
                     {plant.lightRequirement} Light
                   </span>
                 </div>

@@ -95,7 +95,7 @@ body {
 .hero {
   text-align: center;
   padding: 5rem 2rem;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
   color: white;
   border-radius: var(--radius-lg);
   margin-bottom: 2.5rem;
