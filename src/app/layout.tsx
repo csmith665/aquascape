@@ -22,6 +22,7 @@ export default function RootLayout({
             <a href="/products">Products</a>
             <a href="/builder">Builder</a>
             <a href="/compatibility">Compatibility</a>
+            <a href="/setup-checklist">Checklist</a>
             <a href="/tracking">My Tanks</a>
             <a href="/guides">Guides</a>
           </div>

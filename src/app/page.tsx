@@ -52,6 +52,14 @@ export default function HomePage() {
           </div>
 
           <div className="card">
+            <h3>Setup Checklist</h3>
+            <p>Follow a step-by-step interactive checklist to plan, build, and stock your first environment.</p>
+            <Link href="/setup-checklist" className="btn" style={{ marginTop: '1rem' }}>
+              Start Checklist
+            </Link>
+          </div>
+
+          <div className="card">
             <h3>Track Your Tanks</h3>
             <p>Log water parameters, maintenance, and feeding. Monitor livestock health over time.</p>
             <Link href="/tracking" className="btn" style={{ marginTop: '1rem' }}>
