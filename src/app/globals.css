@@ -72,17 +72,16 @@ body {
 .nav-links a {
   color: white;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.95rem;
   padding: 0.5rem 0.75rem;
   border-radius: var(--radius-sm);
   transition: background var(--transition);
-  opacity: 0.92;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .nav-links a:hover {
-  background: rgba(255, 255, 255, 0.15);
-  opacity: 1;
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Main layout */
@@ -125,15 +124,17 @@ body {
   letter-spacing: -1px;
   position: relative;
   z-index: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .hero p {
   font-size: clamp(1rem, 2.5vw, 1.35rem);
-  opacity: 0.95;
+  opacity: 1;
   max-width: 700px;
   margin: 0 auto;
   position: relative;
   z-index: 1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 /* Section */
@@ -229,10 +230,10 @@ body {
   letter-spacing: 0.3px;
 }
 
-.badge-beginner { background: #d4edda; color: #155724; }
-.badge-intermediate { background: #fff3cd; color: #856404; }
-.badge-advanced { background: #f8d7da; color: #721c24; }
-.badge-expert { background: #e2e3e5; color: #383d41; }
+.badge-beginner { background: #c3e6cb; color: #0b2e13; }
+.badge-intermediate { background: #ffe8a1; color: #533f03; }
+.badge-advanced { background: #f5c6cb; color: #4a0d12; }
+.badge-expert { background: #d6d8db; color: #1b1e21; }
 
 /* Buttons */
 .btn {
