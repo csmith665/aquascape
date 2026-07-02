@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function GuidesPage() {
   const guides = [
     {
@@ -5,36 +7,49 @@ export default function GuidesPage() {
       description: 'A complete beginner guide covering equipment selection, cycling, and stocking your first tank.',
       difficulty: 'Beginner',
       readTime: '15 min',
+      href: '#',
     },
     {
       title: 'Understanding the Nitrogen Cycle',
       description: 'Learn why cycling is crucial and how to properly cycle your aquarium before adding livestock.',
       difficulty: 'Beginner',
       readTime: '10 min',
+      href: '#',
     },
     {
       title: 'Choosing Compatible Fish',
       description: 'How to research and select fish that will coexist peacefully in your setup.',
       difficulty: 'Beginner',
       readTime: '8 min',
+      href: '#',
     },
     {
       title: 'Aquarium Plant Care Basics',
       description: 'Lighting, nutrients, CO2, and maintenance tips for keeping aquatic plants healthy.',
       difficulty: 'Intermediate',
       readTime: '12 min',
+      href: '#',
     },
     {
       title: 'Water Testing and Parameter Management',
       description: 'How to test your water, interpret results, and maintain stable parameters.',
       difficulty: 'Beginner',
       readTime: '10 min',
+      href: '#',
     },
     {
       title: 'Common Fish Diseases and Treatments',
       description: 'Identify symptoms of common diseases and learn safe treatment options.',
       difficulty: 'Intermediate',
       readTime: '15 min',
+      href: '#',
+    },
+    {
+      title: 'Enclosure Types Explained',
+      description: 'Aquarium, terrarium, vivarium, paludarium, and more — learn what makes each enclosure type unique.',
+      difficulty: 'Beginner',
+      readTime: '12 min',
+      href: '/articles/environments',
     },
   ];
 
@@ -61,9 +76,13 @@ export default function GuidesPage() {
                 </span>
               </div>
 
-              <button className="btn" style={{ marginTop: '1rem', fontSize: '0.9rem', padding: '0.5rem 1rem' }}>
+              <Link
+                href={guide.href}
+                className="btn"
+                style={{ marginTop: '1rem', fontSize: '0.9rem', padding: '0.5rem 1rem', display: 'inline-block' }}
+              >
                 Read Guide
-              </button>
+              </Link>
             </div>
           ))}
         </div>
