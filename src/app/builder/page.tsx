@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { Biome, CompatibilityLevel, ProductCategory } from '@prisma/client';
+import { Biome, CompatibilityLevel, ProductCategory, SetupType } from '@prisma/client';
 import { buildRecommendation, saveBuild, BuildResult } from './actions';
 import { SavedBuildsList } from './SavedBuildsList';
 import { ShoppingListModal, ShoppingItem } from './ShoppingListModal';
@@ -330,29 +330,54 @@ export default function BuilderPage() {
             </div>
           </details>
 
-          {result.setupNotes.length > 0 && (
-            <details className="callout" open>
-              <summary>Need to Know — Setup Notes</summary>
-              <div className="callout-body">
-                <p style={{ color: 'var(--color-text-muted)', marginTop: '0.25rem', marginBottom: '1rem' }}>
-                  Key things to get right for this kind of build.
+          {(() => {
+            const aquaticTypes: SetupType[] = [
+              SetupType.FRESHWATER, SetupType.SALTWATER, SetupType.BRACKISH,
+              SetupType.PALUDARIUM, SetupType.RIPARIUM,
+            ];
+            const terrTypes: SetupType[] = [SetupType.VIVARIUM, SetupType.TERRARIUM];
+            const aq = aquaticTypes.includes(result.params.type);
+            const terr = terrTypes.includes(result.params.type);
+            const isReef = result.params.biome === Biome.REEF || result.params.biome === Biome.MARINE;
+            const guideLinks: { href: string; label: string }[] = [];
+            if (aq) {
+              guideLinks.push({ href: '/articles/setup-cycling', label: 'Cycling the tank' });
+              guideLinks.push({ href: '/articles/setup-water', label: isReef ? 'Water chemistry (reef)' : 'Water chemistry' });
+              guideLinks.push({ href: '/articles/setup-temperature', label: 'Temperature & heating' });
+            }
+            const plantedTypes: SetupType[] = [SetupType.FRESHWATER, SetupType.PALUDARIUM, SetupType.RIPARIUM];
+            if (plantedTypes.includes(result.params.type) || terr) {
+              guideLinks.push({ href: '/articles/setup-lighting', label: 'Lighting' });
+            }
+            if (terr) {
+              guideLinks.push({ href: '/articles/setup-environment', label: 'Humidity & environment' });
+            }
+            guideLinks.push({ href: '/articles/setup-stocking', label: 'Stocking your tank' });
+            guideLinks.push({ href: '/articles/setup-maintenance', label: 'Maintenance philosophy' });
+            guideLinks.push({ href: '/articles/setup-safety', label: 'Safety & setup' });
+            return (
+              <div className="card" style={{ marginBottom: '1.5rem' }}>
+                <h3>Setup notes — further reading</h3>
+                <p style={{ color: 'var(--color-text-muted)', marginTop: '0.25rem', marginBottom: '0.75rem', fontSize: '0.95rem' }}>
+                  Tailored to your {result.params.type.replace('_', ' ').toLowerCase()} build. Open in a new tab to keep your selections in place.
                 </p>
-                <div style={{ display: 'grid', gap: '1rem' }}>
-                  {result.setupNotes.map((note, idx) => (
-                    <div key={idx} style={{ padding: '0.85rem 1rem', background: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-sm)' }}>
-                      <strong style={{ color: 'var(--color-info)' }}>{note.title}</strong>
-                      <p style={{ fontSize: '0.9rem', marginTop: '0.25rem', marginBottom: 0 }}>{note.body}</p>
-                      {note.guide && (
-                        <p style={{ marginTop: '0.5rem', marginBottom: 0 }}>
-                          <a href={note.guide.href} style={{ fontSize: '0.85rem', fontWeight: 600 }}>{note.guide.label} →</a>
-                        </p>
-                      )}
-                    </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {guideLinks.map((g) => (
+                    <a
+                      key={g.href}
+                      href={g.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.85rem', padding: '0.5rem 0.85rem' }}
+                    >
+                      {g.label} →
+                    </a>
                   ))}
                 </div>
               </div>
-            </details>
-          )}
+            );
+          })()}
 
           {result.animals.length === 0 && result.plants.length === 0 && result.substrates.length === 0 && result.hardscape.length === 0 && result.products.length === 0 ? (
             <div className="card" style={{ marginBottom: '1.5rem' }}>
