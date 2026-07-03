@@ -215,31 +215,6 @@ export default function BuilderPage() {
       {result && (
         <section className="section">
           <h2>Recommendations for {result.params.name}</h2>
-          <p style={{ color: '#5f6f81', marginBottom: '1.5rem' }}>
-            {result.params.type.replace('_', ' ')}
-            {result.params.biome && (
-              <> · {result.params.biome.replace(/_/g, ' ')}</>
-            )}
-            {' · '}{result.params.tankSize} gallons
-          </p>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem' }}>
-            <button
-              type="button"
-              className="btn"
-              disabled={totalSelected === 0}
-              onClick={() => setShowShoppingList(true)}
-              style={{ opacity: totalSelected === 0 ? 0.6 : 1 }}
-            >
-              Generate Shopping List{totalSelected > 0 ? ` (${totalSelected})` : ''}
-            </button>
-          </div>
-          {totalSelected === 0 && (
-            <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '-0.5rem', marginBottom: '1.5rem' }}>
-              Select items below to build your shopping list.
-            </p>
-          )}
-
           {savedId && (
             <div className="card" style={{ background: '#d1fae5', color: '#065f46', marginBottom: '1.5rem' }}>
               <h3>Build saved!</h3>
@@ -267,57 +242,61 @@ export default function BuilderPage() {
             </div>
           )}
 
-          <div className="card" style={{ marginBottom: '1.5rem' }}>
-            <h3>How many can fit in this tank?</h3>
-            <p style={{ color: '#666', marginTop: '0.25rem', marginBottom: '1rem' }}>
-              Beginner-friendly guidance based on your tank size and setup type.
-            </p>
-            {(() => {
-              const guide = generateStockingGuidance(result.params.type, result.params.tankSize);
-              return (
-                <div style={{ display: 'grid', gap: '1rem' }}>
-                  <div style={{ padding: '0.75rem', background: '#f0f7ff', borderRadius: '6px' }}>
-                    <strong style={{ color: '#1a5490' }}>Livestock</strong>
-                    <p style={{ fontSize: '0.95rem', marginTop: '0.25rem', marginBottom: '0.5rem' }}>{guide.animalRule}</p>
-                    <p style={{ fontSize: '0.95rem', marginTop: 0, marginBottom: 0, fontWeight: 600 }}>{guide.animalEstimate}</p>
+          <details className="callout" open>
+            <summary>How many can fit in this tank?</summary>
+            <div className="callout-body">
+              <p style={{ color: 'var(--color-text-muted)', marginTop: '0.25rem', marginBottom: '1rem' }}>
+                Beginner-friendly guidance based on your tank size and setup type.
+              </p>
+              {(() => {
+                const guide = generateStockingGuidance(result.params.type, result.params.tankSize);
+                return (
+                  <div style={{ display: 'grid', gap: '1rem' }}>
+                    <div style={{ padding: '0.85rem 1rem', background: 'var(--color-info-soft)', borderRadius: 'var(--radius-sm)' }}>
+                      <strong style={{ color: 'var(--color-info)' }}>Livestock</strong>
+                      <p style={{ fontSize: '0.95rem', marginTop: '0.25rem', marginBottom: '0.5rem' }}>{guide.animalRule}</p>
+                      <p style={{ fontSize: '0.95rem', marginTop: 0, marginBottom: 0, fontWeight: 600 }}>{guide.animalEstimate}</p>
+                    </div>
+                    <div style={{ padding: '0.85rem 1rem', background: 'var(--color-success-soft)', borderRadius: 'var(--radius-sm)' }}>
+                      <strong style={{ color: 'var(--color-success)' }}>Plants</strong>
+                      <p style={{ fontSize: '0.95rem', marginTop: '0.25rem', marginBottom: 0 }}>{guide.plantAdvice}</p>
+                    </div>
+                    <div style={{ padding: '0.85rem 1rem', background: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-sm)' }}>
+                      <strong>Things to keep in mind</strong>
+                      <ul style={{ marginTop: '0.5rem', marginBottom: 0, paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
+                        {guide.caveats.map((c, i) => (
+                          <li key={i} style={{ marginBottom: '0.25rem' }}>{c}</li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                  <div style={{ padding: '0.75rem', background: '#f0fff4', borderRadius: '6px' }}>
-                    <strong style={{ color: '#065f46' }}>Plants</strong>
-                    <p style={{ fontSize: '0.95rem', marginTop: '0.25rem', marginBottom: 0 }}>{guide.plantAdvice}</p>
-                  </div>
-                  <div style={{ padding: '0.75rem', background: '#f8f9fa', borderRadius: '6px' }}>
-                    <strong>Things to keep in mind</strong>
-                    <ul style={{ marginTop: '0.5rem', marginBottom: 0, paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
-                      {guide.caveats.map((c, i) => (
-                        <li key={i} style={{ marginBottom: '0.25rem' }}>{c}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
+                );
+              })()}
+            </div>
+          </details>
 
           {result.setupNotes.length > 0 && (
-            <div className="card" style={{ marginBottom: '1.5rem' }}>
-              <h3>Need to Know — Setup Notes</h3>
-              <p style={{ color: '#666', marginTop: '0.25rem', marginBottom: '1rem' }}>
-                Key things to get right for this kind of build.
-              </p>
-              <div style={{ display: 'grid', gap: '1rem' }}>
-                {result.setupNotes.map((note, idx) => (
-                  <div key={idx} style={{ padding: '0.75rem', background: '#f8f9fa', borderRadius: '6px' }}>
-                    <strong style={{ color: '#1a5490' }}>{note.title}</strong>
-                    <p style={{ fontSize: '0.9rem', marginTop: '0.25rem', marginBottom: 0 }}>{note.body}</p>
-                    {note.guide && (
-                      <p style={{ marginTop: '0.5rem', marginBottom: 0 }}>
-                        <a href={note.guide.href} style={{ fontSize: '0.85rem', fontWeight: 600 }}>{note.guide.label} →</a>
-                      </p>
-                    )}
-                  </div>
-                ))}
+            <details className="callout" open>
+              <summary>Need to Know — Setup Notes</summary>
+              <div className="callout-body">
+                <p style={{ color: 'var(--color-text-muted)', marginTop: '0.25rem', marginBottom: '1rem' }}>
+                  Key things to get right for this kind of build.
+                </p>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  {result.setupNotes.map((note, idx) => (
+                    <div key={idx} style={{ padding: '0.85rem 1rem', background: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-sm)' }}>
+                      <strong style={{ color: 'var(--color-info)' }}>{note.title}</strong>
+                      <p style={{ fontSize: '0.9rem', marginTop: '0.25rem', marginBottom: 0 }}>{note.body}</p>
+                      {note.guide && (
+                        <p style={{ marginTop: '0.5rem', marginBottom: 0 }}>
+                          <a href={note.guide.href} style={{ fontSize: '0.85rem', fontWeight: 600 }}>{note.guide.label} →</a>
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </details>
           )}
 
           {result.animals.length === 0 && result.plants.length === 0 && result.substrates.length === 0 && result.hardscape.length === 0 && result.products.length === 0 ? (
@@ -334,8 +313,40 @@ export default function BuilderPage() {
               <input type="hidden" name="skillLevel" value={result.params.skillLevel} />
               <input type="hidden" name="maintenancePref" value={result.params.maintenancePref} />
 
-              <p style={{ marginBottom: '1rem', color: '#666' }}>
-                Check the items you want to include — animals and plants are saved with the build; everything you check here counts toward your shopping list.
+              <div className="action-bar">
+                <div className="action-bar-info">
+                  <span className="badge badge-info">{result.params.type.replace('_', ' ')}</span>
+                  {result.params.biome && (
+                    <span className="badge badge-success">{result.params.biome.replace(/_/g, ' ')}</span>
+                  )}
+                  <span className="badge" style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary-dark)' }}>
+                    {result.params.tankSize} gal
+                  </span>
+                  {totalSelected > 0 && (
+                    <span className="badge badge-warning">{totalSelected} selected</span>
+                  )}
+                </div>
+                <div className="action-bar-actions">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={totalSelected === 0}
+                    onClick={() => setShowShoppingList(true)}
+                  >
+                    Shopping List{totalSelected > 0 ? ` (${totalSelected})` : ''}
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn"
+                    disabled={saving}
+                  >
+                    {saving ? 'Saving...' : `Save Build${totalSelected > 0 ? ` (${totalSelected})` : ''}`}
+                  </button>
+                </div>
+              </div>
+
+              <p style={{ marginBottom: '1rem', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+                Check items to include them — animals and plants are saved with the build; everything you check also counts toward your shopping list.
               </p>
 
               <h3 style={{ color: '#1a5490', marginBottom: '1rem' }}>Recommended Animals</h3>
@@ -627,26 +638,8 @@ export default function BuilderPage() {
                 })()
               )}
 
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '1rem' }}>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="btn"
-                >
-                  {saving ? 'Saving...' : `Save Build${totalSelected > 0 ? ` (${totalSelected} selected)` : ''}`}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={totalSelected === 0}
-                  onClick={() => setShowShoppingList(true)}
-                  style={{ opacity: totalSelected === 0 ? 0.6 : 1 }}
-                >
-                  Generate Shopping List{totalSelected > 0 ? ` (${totalSelected})` : ''}
-                </button>
-              </div>
-              <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.5rem' }}>
-                The Shopping List captures everything you&apos;ve checked across all sections. Saved builds persist your livestock and plants; the shopping list is for printing or buying now.
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '1rem' }}>
+                Tip: the Shopping List at the top captures everything you&apos;ve checked across all sections. Saved builds persist your livestock and plants; print or save the shopping list separately for buying.
               </p>
             </form>
           )}
