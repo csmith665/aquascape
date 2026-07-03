@@ -203,6 +203,58 @@ export default function BuilderPage() {
             ))}
           </div>
 
+          <h3 style={{ color: '#1a5490', margin: '2rem 0 1rem' }}>Recommended Substrate</h3>
+          {result.substrates.length === 0 ? (
+            <p style={{ color: '#666' }}>No specific substrate recommendations for this setup.</p>
+          ) : (
+            <div className="grid">
+              {result.substrates.map((item) => (
+                <div key={item.name} className="card">
+                  {item.product?.imageUrl && (
+                    <img src={item.product.imageUrl} alt={item.name} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '6px', marginBottom: '0.75rem' }} />
+                  )}
+                  <h4>{item.name}</h4>
+                  <p style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{item.why}</p>
+                  <div style={{ marginTop: '0.75rem' }}>
+                    <span className="badge" style={{ background: '#fef3c7', color: '#92400e' }}>Substrate</span>
+                    {item.product?.priceRange && (
+                      <span className="badge" style={{ background: '#d1fae5', color: '#065f46' }}>
+                        {item.product.priceRange.replace('_', ' ')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <h3 style={{ color: '#1a5490', margin: '2rem 0 1rem' }}>Recommended Rocks &amp; Hardscape</h3>
+          {result.hardscape.length === 0 ? (
+            <p style={{ color: '#666' }}>No specific hardscape recommendations for this setup.</p>
+          ) : (
+            <div className="grid">
+              {result.hardscape.map((item) => (
+                <div key={item.name} className="card">
+                  {item.product?.imageUrl && (
+                    <img src={item.product.imageUrl} alt={item.name} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '6px', marginBottom: '0.75rem' }} />
+                  )}
+                  <h4>{item.name}</h4>
+                  <p style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{item.why}</p>
+                  <div style={{ marginTop: '0.75rem' }}>
+                    <span className="badge" style={{ background: '#e7f3ff', color: '#1a5490' }}>
+                      {item.kind === 'rock' ? 'Rock' : item.kind === 'wood' ? 'Wood' : 'Hardscape'}
+                    </span>
+                    {item.product?.priceRange && (
+                      <span className="badge" style={{ background: '#d1fae5', color: '#065f46' }}>
+                        {item.product.priceRange.replace('_', ' ')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           <h3 style={{ color: '#1a5490', margin: '2rem 0 1rem' }}>Recommended Products</h3>
           <div className="grid">
             {result.products.map((product) => (

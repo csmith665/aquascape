@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/db';
 import { Difficulty, SetupType, MaintenanceLevel, ProductCategory, Habitat, Biome } from '@prisma/client';
 import { assessCompatibility } from '@/lib/compatibility';
+import { recommendHardscape, matchHardscapeProducts } from '@/lib/hardscape';
 import { z } from 'zod';
 
 const buildSchema = z.object({
@@ -66,12 +67,11 @@ export async function buildRecommendation(formData: FormData) {
     (p) => difficultyRank[p.difficulty] <= difficultyRank[data.skillLevel] + 1
   );
 
-  // Products relevant to setup
+  // Equipment products relevant to setup (substrate/hardscape handled separately)
   const productCategories: ProductCategory[] = [
     ProductCategory.FILTER,
     ProductCategory.HEATER,
     ProductCategory.LIGHTING,
-    ProductCategory.SUBSTRATE,
     ProductCategory.TESTING,
     ProductCategory.WATER_TREATMENT,
   ];
@@ -87,6 +87,17 @@ export async function buildRecommendation(formData: FormData) {
     orderBy: { rating: 'desc' },
     take: 12,
   });
+
+  // Substrate & hardscape recommendations tailored to setup type + biome
+  const hardscapeProducts = await prisma.product.findMany({
+    where: { category: { in: [ProductCategory.SUBSTRATE, ProductCategory.HARDSCAPE, ProductCategory.DECORATION] } },
+    select: { id: true, name: true, imageUrl: true, priceRange: true, rating: true },
+  });
+
+  const allHardscape = recommendHardscape(data.type, data.biome);
+  const withProducts = matchHardscapeProducts(allHardscape, hardscapeProducts);
+  const substrates = withProducts.filter((h) => h.kind === 'substrate');
+  const hardscape = withProducts.filter((h) => h.kind !== 'substrate');
 
   const project = await prisma.builderProject.create({
     data: {
@@ -107,6 +118,8 @@ export async function buildRecommendation(formData: FormData) {
     animals: suitableAnimals.slice(0, 8),
     plants: suitablePlants.slice(0, 8),
     products: products.slice(0, 8),
+    substrates,
+    hardscape,
     warnings,
   };
 }

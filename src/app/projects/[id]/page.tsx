@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
+import { ProductCategory } from '@prisma/client';
+import { recommendHardscape, matchHardscapeProducts } from '@/lib/hardscape';
 import { deleteProject } from '../actions';
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +23,17 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
 
   const animalEntries = project.entries.filter((e) => e.animalId);
   const plantEntries = project.entries.filter((e) => e.plantId);
+
+  const hardscapeProducts = await prisma.product.findMany({
+    where: { category: { in: [ProductCategory.SUBSTRATE, ProductCategory.HARDSCAPE, ProductCategory.DECORATION] } },
+    select: { id: true, name: true, imageUrl: true, priceRange: true, rating: true },
+  });
+  const allHardscape = matchHardscapeProducts(
+    recommendHardscape(project.type, project.biome ?? undefined),
+    hardscapeProducts
+  );
+  const substrates = allHardscape.filter((h) => h.kind === 'substrate');
+  const hardscape = allHardscape.filter((h) => h.kind !== 'substrate');
 
   return (
     <>
@@ -127,6 +140,58 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
                 {entry.notes && (
                   <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#666' }}>{entry.notes}</p>
                 )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <h3 style={{ color: '#1a5490', marginBottom: '1rem' }}>Recommended Substrate</h3>
+        {substrates.length === 0 ? (
+          <p style={{ color: '#666', marginBottom: '1.5rem' }}>No specific substrate recommendations for this setup.</p>
+        ) : (
+          <div className="grid" style={{ marginBottom: '1.5rem' }}>
+            {substrates.map((item) => (
+              <div key={item.name} className="card">
+                {item.product?.imageUrl && (
+                  <img src={item.product.imageUrl} alt={item.name} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '6px', marginBottom: '0.75rem' }} />
+                )}
+                <h4>{item.name}</h4>
+                <p style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{item.why}</p>
+                <div style={{ marginTop: '0.75rem' }}>
+                  <span className="badge" style={{ background: '#fef3c7', color: '#92400e' }}>Substrate</span>
+                  {item.product?.priceRange && (
+                    <span className="badge" style={{ background: '#d1fae5', color: '#065f46' }}>
+                      {item.product.priceRange.replace('_', ' ')}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <h3 style={{ color: '#1a5490', marginBottom: '1rem' }}>Recommended Rocks &amp; Hardscape</h3>
+        {hardscape.length === 0 ? (
+          <p style={{ color: '#666', marginBottom: '1.5rem' }}>No specific hardscape recommendations for this setup.</p>
+        ) : (
+          <div className="grid" style={{ marginBottom: '1.5rem' }}>
+            {hardscape.map((item) => (
+              <div key={item.name} className="card">
+                {item.product?.imageUrl && (
+                  <img src={item.product.imageUrl} alt={item.name} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '6px', marginBottom: '0.75rem' }} />
+                )}
+                <h4>{item.name}</h4>
+                <p style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{item.why}</p>
+                <div style={{ marginTop: '0.75rem' }}>
+                  <span className="badge" style={{ background: '#e7f3ff', color: '#1a5490' }}>
+                    {item.kind === 'rock' ? 'Rock' : item.kind === 'wood' ? 'Wood' : 'Hardscape'}
+                  </span>
+                  {item.product?.priceRange && (
+                    <span className="badge" style={{ background: '#d1fae5', color: '#065f46' }}>
+                      {item.product.priceRange.replace('_', ' ')}
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
