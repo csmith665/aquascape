@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    expose:
+      - "3000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/aquascape
       - NODE_ENV=production
@@ -14,8 +16,6 @@ services:
 
   db:
     image: postgres:16-alpine
-    ports:
-      - "5432:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -28,5 +28,27 @@ services:
       timeout: 5s
       retries: 5
 
+  # Reverse proxy with automatic Let's Encrypt TLS on port 443.
+  # Only started with the "prod" profile — see README.
+  #   Dev (default, plain HTTP on :3000):  docker compose up -d --build
+  #   Prod (HTTPS on :443 with certs):     docker compose --profile prod up -d --build
+  caddy:
+    profiles: ["prod"]
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    depends_on:
+      - app
+
 volumes:
   pgdata:
+  caddy_data:
+  caddy_config:

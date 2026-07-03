@@ -31,7 +31,7 @@ Aquarium and vivarium planning platform. Plan, build, and track your aquariums a
 
 > No Node.js, npm, or PostgreSQL install is required — everything runs in containers.
 
-## Quick Start (local)
+## Quick Start (local / dev)
 
 ```bash
 git clone https://github.com/csmith665/aquascape.git
@@ -39,11 +39,25 @@ cd aquascape
 docker compose up -d --build
 ```
 
-The app is available at **http://localhost:3000**. The first build takes a few minutes; subsequent rebuilds are faster thanks to layer caching.
+The app is available at **http://localhost:3000** (plain HTTP — the dev default). The first build takes a few minutes; subsequent rebuilds are faster thanks to layer caching.
 
-## Deploy to Another Server
+## Two Deployment Modes
 
-The recommended deployment is the same Docker Compose stack used locally. The steps below assume a clean Linux server (Ubuntu/Debian) with SSH access.
+The stack supports two modes, chosen by the command you run:
+
+| | **Dev** (default) | **Prod** |
+| --- | --- | --- |
+| Command | `docker compose up -d --build` | `docker compose --profile prod up -d --build` |
+| URL | `http://localhost:3000` | `https://YOUR-DOMAIN` |
+| TLS | none (plain HTTP) | automatic Let's Encrypt via Caddy |
+| Ports to open | 3000 | 80 and 443 (close 3000) |
+| `DOMAIN` env | ignored | required for real certs |
+
+In **dev**, only the `app` and `db` services start. In **prod**, the `caddy` service also starts, terminates TLS on port 443, obtains/renews a Let's Encrypt certificate for `DOMAIN`, and redirects all plain-HTTP traffic on port 80 to HTTPS. The app still publishes port 3000 in prod for convenience — close it in your firewall so traffic only reaches the app through Caddy.
+
+## Deploy to Another Server (prod, HTTPS on 443)
+
+The steps below assume a clean Linux server (Ubuntu/Debian) with SSH access and deploy the **prod** mode with automatic TLS.
 
 ### 1. Install Docker on the server
 
@@ -76,27 +90,42 @@ Option B — copy from your local machine:
 scp -r ./aquascape user@your-server:/home/user/aquascape
 ```
 
-### 3. Configure environment (optional)
+### 3. Configure your domain and environment
 
-The defaults in `docker-compose.yml` work out of the box for a single-host deploy. To change the database password or other settings, create a `.env` file:
+The Caddy container serves the site over HTTPS on port 443 and obtains a Let's Encrypt certificate automatically — **but only if a real domain is configured** and that domain's A record points at your server.
+
+Create a `.env` file in the project root:
 
 ```bash
 cp .env.example .env
-# Edit .env — only DATABASE_URL and NODE_ENV are read by the app container.
-# Keep DATABASE_URL in sync with docker-compose.yml's db service credentials.
 ```
 
-To change the **database password**, edit both:
-- `docker-compose.yml` → `db.environment.POSTGRES_PASSWORD` and `app.environment.DATABASE_URL`
-- `.env` → `DATABASE_URL` (used by local dev / one-off commands)
+Edit `.env`:
 
-### 4. Build and start
+```dotenv
+# The public domain Caddy should serve. Required for automatic Let's Encrypt certs.
+# Point this domain's A record at your server's public IP before starting.
+DOMAIN=aquascape.example.com
+
+# Used by local dev / one-off prisma commands. Keep in sync with docker-compose.yml.
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/aquascape"
+NODE_ENV="production"
+```
+
+- If `DOMAIN` is unset or `localhost`, Caddy uses its internal CA and serves a self-signed cert — fine for local testing only.
+- If `DOMAIN` is a real domain, ports **80 and 443** must be reachable from the internet (open them in your firewall/security group) so Let's Encrypt can complete the HTTP-01 challenge. Caddy renews certs automatically before expiry — no cron job needed.
+
+To change the **database password**, edit `docker-compose.yml` → `db.environment.POSTGRES_PASSWORD` and `app.environment.DATABASE_URL`, and `.env` → `DATABASE_URL`.
+
+### 4. Build and start (prod mode)
 
 ```bash
-docker compose up -d --build
+docker compose --profile prod up -d --build
 ```
 
-This builds the app image, starts PostgreSQL, and starts the Next.js app. The database is a named volume (`pgdata`) so data persists across restarts.
+The `--profile prod` flag starts the Caddy reverse proxy alongside the app and database. On first start with a real domain, Caddy obtains its Let's Encrypt certificate (a few seconds). Certificates are stored in the `caddy_data` volume and persist across restarts; Caddy renews them automatically before expiry. Postgres data lives in the `pgdata` volume.
+
+> To run in **dev mode** on this server instead (plain HTTP on :3000, no TLS), drop the flag: `docker compose up -d --build`.
 
 ### 5. Apply the schema and seed data
 
@@ -122,30 +151,20 @@ docker compose exec -T app npm run db:seed
 ### 6. Verify
 
 ```bash
-docker compose ps              # both services should be Up / healthy
-curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:3000
+docker compose ps              # app, db, and caddy should all be Up
+curl -s -o /dev/null -w "HTTPS %{http_code}\n" https://aquascape.example.com
 ```
 
-Open `http://YOUR-SERVER-IP:3000` in a browser. Port 3000 must be open in any firewall/security group.
+Open `https://YOUR-DOMAIN` in a browser. Ensure ports **80 and 443** are open in your firewall/security group, and **close port 3000** so the app is only reachable through Caddy (TLS).
 
-### 7. Put it behind a reverse proxy (recommended for public access)
-
-For HTTPS and a real domain, put the app behind Caddy, Traefik, or Nginx. A minimal Caddy example (`Caddyfile`):
-
-```caddy
-aquascape.example.com {
-    reverse_proxy localhost:3000
-}
-```
-
-Run Caddy in a container or as a system service. It will provision Let's Encrypt certs automatically.
+> Caddy also redirects any plain-HTTP request on port 80 to HTTPS automatically.
 
 ### Updating an existing deployment
 
 ```bash
 cd aquascape
 git pull                       # if cloned from the repo
-docker compose up -d --build   # rebuild with the new code
+docker compose --profile prod up -d --build   # prod: rebuild with Caddy. Drop --profile prod for dev.
 docker compose exec -T app npx prisma db push --skip-generate  # apply schema changes
 ```
 
@@ -193,12 +212,14 @@ NODE_ENV="development"
 
 | Variable       | Required | Default | Notes |
 | -------------- | -------- | ------- | ----- |
+| `DOMAIN`       | for TLS  | `localhost` | Domain Caddy serves on. Set to a real domain (with its A record pointing here) for automatic Let's Encrypt certs. Defaults to `localhost` with a self-signed internal CA cert. |
 | `DATABASE_URL` | yes      | —       | Postgres connection string. In Compose, set by `app.environment` to point at the `db` service. |
 | `NODE_ENV`     | no       | `development` | Set to `production` in the Compose stack. |
 
 ## Security
 
-- Security headers middleware (X-Frame-Options, X-Content-Type-Options, HSTS, Referrer-Policy, Permissions-Policy)
+- **Automatic TLS** via Caddy — Let's Encrypt certificates are obtained and renewed automatically for the configured `DOMAIN`. Plain HTTP on port 80 redirects to HTTPS.
+- Security headers set by both the Next.js middleware and Caddy (X-Frame-Options, X-Content-Type-Options, HSTS, Referrer-Policy, Permissions-Policy)
 - Environment variable validation with Zod
 - Prisma ORM prevents SQL injection
 - React's JSX escaping prevents XSS
@@ -230,7 +251,8 @@ aquascape/
 │   ├── lib/             # db client, env validation, compatibility, hardscape, routines
 │   └── middleware.ts    # Security headers
 ├── Dockerfile
-├── docker-compose.yml
+├── docker-compose.yml   # app + db + caddy (auto TLS on 443)
+├── Caddyfile            # reverse proxy + automatic Let's Encrypt certs
 └── package.json
 ```
 
