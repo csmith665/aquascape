@@ -173,6 +173,8 @@ enum ProductCategory {
   CO2_SYSTEM
   TOOL
   SUPPLEMENT
+  CLEANING
+  HOSE_TUBING
   OTHER
 }
 

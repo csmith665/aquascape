@@ -103,6 +103,9 @@ export async function buildRecommendation(formData: FormData) {
     ProductCategory.LIGHTING,
     ProductCategory.TESTING,
     ProductCategory.WATER_TREATMENT,
+    ProductCategory.CLEANING,
+    ProductCategory.HOSE_TUBING,
+    ProductCategory.TOOL,
   ];
 
   if (data.type === SetupType.SALTWATER) productCategories.push(ProductCategory.AIR_PUMP);

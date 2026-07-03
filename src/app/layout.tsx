@@ -8,6 +8,7 @@ export const metadata: Metadata = {
 
 const navLinks = [
   { href: '/builder', label: 'Builder', icon: 'beaker' },
+  { href: '/catalog', label: 'Catalog', icon: 'grid' },
   { href: '/animals', label: 'Animals', icon: 'fish' },
   { href: '/plants', label: 'Plants', icon: 'leaf' },
   { href: '/products', label: 'Products', icon: 'box' },
@@ -20,6 +21,10 @@ const navLinks = [
 function NavIcon({ name }: { name: string }) {
   const common = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   switch (name) {
+    case 'grid':
+      return (
+        <svg {...common}><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>
+      );
     case 'fish':
       return (
         <svg {...common}><path d="M6.5 12c0-3 2.5-6 7.5-6 4 0 7 2 7 2l3-2-1 4 1 4-3-2s-3 2-7 2c-5 0-7.5-3-7.5-6Z" /><path d="M16 12h.01" /></svg>
