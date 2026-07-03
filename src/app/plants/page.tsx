@@ -114,7 +114,7 @@ export default async function PlantsPage({
               </div>
               <div style={{ marginTop: '0.75rem', fontSize: '0.9rem' }}>
                 {plant.placement && <p><strong>Placement:</strong> {plant.placement}</p>}
-                {plant.maxHeight && <p><strong>Height:</strong> {plant.maxHeight}"</p>}
+                {plant.maxHeight && <p><strong>Height:</strong> {plant.maxHeight}&quot;</p>}
               </div>
               {plant.careGuide && (
                 <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#f8f9fa', borderRadius: '6px', fontSize: '0.85rem' }}>

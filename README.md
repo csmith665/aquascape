@@ -210,9 +210,11 @@ npm run db:generate        # generate Prisma client
 npm run db:push            # push schema to a local Postgres
 npm run db:seed            # seed sample data
 npm run dev                # start dev server on :3000
+npm run lint               # ESLint (next/core-web-vitals)
+npm run typecheck          # tsc --noEmit
 ```
 
-There is no `npm run lint` script configured yet (see issue #2). To typecheck and build locally without installing Node, use a throwaway container:
+To typecheck and build without installing Node locally, use a throwaway container:
 
 ```bash
 docker run --rm -v "$PWD":/app -w /app node:20-alpine \

@@ -44,7 +44,7 @@ export default function BuilderPage() {
         <div className="card" style={{ maxWidth: '600px', margin: '0 auto' }}>
           <h3>Start a New Build</h3>
           <p style={{ marginTop: '1rem' }}>
-            Answer a few questions and we'll help you create a compatible setup
+            Answer a few questions and we&apos;ll help you create a compatible setup
             tailored to your skill level and maintenance preferences.
           </p>
 
