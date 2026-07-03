@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
-import { SetupType, EnvironmentStatus, MaintenanceType, HealthStatus } from '@prisma/client';
+import { SetupType, EnvironmentStatus, MaintenanceType, HealthStatus, RoutineFrequency } from '@prisma/client';
+import { defaultRoutines } from '@/lib/routines';
 import { z } from 'zod';
 
 const idSchema = z.string().min(1);
@@ -44,6 +45,9 @@ export async function createEnvironment(formData: FormData) {
       status: raw.status ?? EnvironmentStatus.SETUP,
       startDate: raw.startDate ? new Date(raw.startDate) : null,
       notes: raw.notes,
+      routines: {
+        create: defaultRoutines(raw.type),
+      },
     },
   });
 
@@ -249,5 +253,70 @@ export async function removeLivestock(formData: FormData) {
   const id = idSchema.parse(formData.get('id'));
   const environmentId = idSchema.parse(formData.get('environmentId'));
   await prisma.trackedLivestock.delete({ where: { id } });
+  revalidatePath(`/tracking/${environmentId}`);
+}
+
+const routineSchema = z.object({
+  environmentId: z.string().min(1),
+  task: z.string().min(1).max(200),
+  frequency: z.nativeEnum(RoutineFrequency),
+  type: z.nativeEnum(MaintenanceType),
+  notes: z.string().max(1000).optional(),
+});
+
+export async function addRoutine(formData: FormData) {
+  const data = routineSchema.parse({
+    environmentId: formData.get('environmentId'),
+    task: formData.get('task'),
+    frequency: formData.get('frequency'),
+    type: formData.get('type'),
+    notes: formData.get('notes') || undefined,
+  });
+
+  const { environmentId, ...rest } = data;
+  await prisma.maintenanceRoutine.create({ data: { environmentId, ...rest } });
+  revalidatePath(`/tracking/${environmentId}`);
+}
+
+export async function updateRoutine(formData: FormData) {
+  const id = idSchema.parse(formData.get('id'));
+  const environmentId = idSchema.parse(formData.get('environmentId'));
+  const data = routineSchema.parse({
+    environmentId: formData.get('environmentId'),
+    task: formData.get('task'),
+    frequency: formData.get('frequency'),
+    type: formData.get('type'),
+    notes: formData.get('notes') || undefined,
+  });
+
+  const { environmentId: _envId, ...rest } = data;
+  await prisma.maintenanceRoutine.update({ where: { id }, data: rest });
+  revalidatePath(`/tracking/${environmentId}`);
+}
+
+export async function toggleRoutine(formData: FormData) {
+  const id = idSchema.parse(formData.get('id'));
+  const environmentId = idSchema.parse(formData.get('environmentId'));
+  const enabled = formData.get('enabled') === 'true';
+
+  await prisma.maintenanceRoutine.update({ where: { id }, data: { enabled: !enabled } });
+  revalidatePath(`/tracking/${environmentId}`);
+}
+
+export async function completeRoutine(formData: FormData) {
+  const id = idSchema.parse(formData.get('id'));
+  const environmentId = idSchema.parse(formData.get('environmentId'));
+
+  await prisma.maintenanceRoutine.update({
+    where: { id },
+    data: { lastCompleted: new Date() },
+  });
+  revalidatePath(`/tracking/${environmentId}`);
+}
+
+export async function deleteRoutine(formData: FormData) {
+  const id = idSchema.parse(formData.get('id'));
+  const environmentId = idSchema.parse(formData.get('environmentId'));
+  await prisma.maintenanceRoutine.delete({ where: { id } });
   revalidatePath(`/tracking/${environmentId}`);
 }

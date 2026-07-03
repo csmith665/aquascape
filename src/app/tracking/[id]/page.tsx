@@ -6,6 +6,7 @@ import {
   EnvironmentStatus,
   MaintenanceType,
   HealthStatus,
+  RoutineFrequency,
 } from '@prisma/client';
 import {
   updateEnvironment,
@@ -19,6 +20,11 @@ import {
   addLivestock,
   updateLivestockStatus,
   removeLivestock,
+  addRoutine,
+  updateRoutine,
+  toggleRoutine,
+  completeRoutine,
+  deleteRoutine,
 } from '../actions';
 
 export const dynamic = 'force-dynamic';
@@ -52,6 +58,7 @@ export default async function EnvironmentDetailPage({ params }: { params: { id: 
       maintenanceLogs: { orderBy: { date: 'desc' }, take: 20 },
       feedingLogs: { orderBy: { date: 'desc' }, take: 20 },
       livestock: { orderBy: { dateAdded: 'desc' }, include: { animal: true, plant: true } },
+      routines: { orderBy: { createdAt: 'asc' } },
     },
   });
 
@@ -63,6 +70,25 @@ export default async function EnvironmentDetailPage({ params }: { params: { id: 
   ]);
 
   const sc = statusColors[env.status];
+
+  const frequencyDays: Record<RoutineFrequency, number> = {
+    DAILY: 1,
+    WEEKLY: 7,
+    BIWEEKLY: 14,
+    MONTHLY: 30,
+    QUARTERLY: 90,
+  };
+
+  const now = new Date();
+  const nextDue = (freq: RoutineFrequency, last: Date | null) => {
+    if (!last) return 'Due now';
+    const days = frequencyDays[freq];
+    const due = new Date(last.getTime() + days * 86400000);
+    const diff = Math.round((due.getTime() - now.getTime()) / 86400000);
+    if (diff <= 0) return 'Due now';
+    if (diff === 1) return 'Due tomorrow';
+    return `Due in ${diff} days`;
+  };
 
   return (
     <>
@@ -167,6 +193,132 @@ export default async function EnvironmentDetailPage({ params }: { params: { id: 
             <button type="submit" className="btn" style={{ background: '#b91c1c' }}>
               Delete Environment
             </button>
+          </form>
+        </div>
+
+        {/* Maintenance Routines */}
+        <h3 style={{ color: '#1a5490', marginBottom: '1rem' }}>Maintenance Routines</h3>
+        <p style={{ color: '#666', marginBottom: '1rem' }}>
+          Recommended recurring tasks for this {env.type.replace('_', ' ').toLowerCase()} setup. Toggle, edit, or remove to fit your tank.
+        </p>
+
+        {env.routines.length === 0 ? (
+          <p style={{ color: '#666', marginBottom: '1.5rem' }}>No routines yet — add one below.</p>
+        ) : (
+          <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem' }}>
+            {env.routines.map((r) => {
+              const due = r.enabled ? nextDue(r.frequency, r.lastCompleted) : 'Paused';
+              const overdue = r.enabled && (r.lastCompleted === null || due === 'Due now');
+              return (
+                <li key={r.id} className="card" style={{ marginBottom: '0.75rem', padding: '1rem', opacity: r.enabled ? 1 : 0.6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div style={{ flex: '1 1 240px' }}>
+                      <strong>{r.task}</strong>
+                      <div style={{ marginTop: '0.4rem' }}>
+                        <span className="badge" style={{ background: '#e7f3ff', color: '#1a5490' }}>{r.frequency.toLowerCase()}</span>
+                        <span className="badge" style={{ background: '#fff4e6', color: '#92400e' }}>{r.type.replace('_', ' ').toLowerCase()}</span>
+                        <span className="badge" style={{ background: overdue ? '#fee2e2' : '#d1fae5', color: overdue ? '#991b1b' : '#065f46' }}>
+                          {due}
+                        </span>
+                      </div>
+                      {r.notes && <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.4rem', marginBottom: 0 }}>{r.notes}</p>}
+                      {r.lastCompleted && <p style={{ fontSize: '0.8rem', color: '#999', marginTop: '0.25rem', marginBottom: 0 }}>Last done {fmtDate(r.lastCompleted)}</p>}
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                      {r.enabled && (
+                        <form action={completeRoutine}>
+                          <input type="hidden" name="id" value={r.id} />
+                          <input type="hidden" name="environmentId" value={env.id} />
+                          <button type="submit" className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.35rem 0.7rem' }}>✓ Done</button>
+                        </form>
+                      )}
+                      <form action={toggleRoutine}>
+                        <input type="hidden" name="id" value={r.id} />
+                        <input type="hidden" name="environmentId" value={env.id} />
+                        <input type="hidden" name="enabled" value={String(r.enabled)} />
+                        <button type="submit" className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.35rem 0.7rem' }}>
+                          {r.enabled ? 'Pause' : 'Resume'}
+                        </button>
+                      </form>
+                      <form action={deleteRoutine}>
+                        <input type="hidden" name="id" value={r.id} />
+                        <input type="hidden" name="environmentId" value={env.id} />
+                        <button type="submit" style={{ background: 'none', border: 'none', color: '#b91c1c', cursor: 'pointer', fontSize: '0.85rem' }}>✕</button>
+                      </form>
+                    </div>
+                  </div>
+
+                  <details style={{ marginTop: '0.75rem' }}>
+                    <summary style={{ fontSize: '0.85rem', color: '#1a5490', cursor: 'pointer' }}>Edit</summary>
+                    <form action={updateRoutine} style={{ marginTop: '0.75rem' }}>
+                      <input type="hidden" name="id" value={r.id} />
+                      <input type="hidden" name="environmentId" value={env.id} />
+                      <div>
+                        <label>Task</label>
+                        <input name="task" type="text" required defaultValue={r.task} style={{ width: '100%' }} />
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                        <div>
+                          <label>Frequency</label>
+                          <select name="frequency" defaultValue={r.frequency} style={{ width: '100%' }}>
+                            {Object.values(RoutineFrequency).map((f) => (
+                              <option key={f} value={f}>{f.toLowerCase()}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label>Type</label>
+                          <select name="type" defaultValue={r.type} style={{ width: '100%' }}>
+                            {Object.values(MaintenanceType).map((t) => (
+                              <option key={t} value={t}>{t.replace('_', ' ').toLowerCase()}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <label>Notes</label>
+                        <input name="notes" type="text" defaultValue={r.notes ?? ''} style={{ width: '100%' }} />
+                      </div>
+                      <button type="submit" className="btn btn-secondary" style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem', marginTop: '0.75rem' }}>Save changes</button>
+                    </form>
+                  </details>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        <div className="card" style={{ marginBottom: '1.5rem' }}>
+          <p style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Add a routine</p>
+          <form action={addRoutine}>
+            <input type="hidden" name="environmentId" value={env.id} />
+            <div>
+              <label>Task</label>
+              <input name="task" type="text" required placeholder="e.g., Wipe condensation from glass" style={{ width: '100%' }} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+              <div>
+                <label>Frequency</label>
+                <select name="frequency" defaultValue="WEEKLY" style={{ width: '100%' }}>
+                  {Object.values(RoutineFrequency).map((f) => (
+                    <option key={f} value={f}>{f.toLowerCase()}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label>Type</label>
+                <select name="type" defaultValue="OTHER" style={{ width: '100%' }}>
+                  {Object.values(MaintenanceType).map((t) => (
+                    <option key={t} value={t}>{t.replace('_', ' ').toLowerCase()}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div style={{ marginTop: '0.5rem' }}>
+              <label>Notes</label>
+              <input name="notes" type="text" style={{ width: '100%' }} />
+            </div>
+            <button type="submit" className="btn" style={{ marginTop: '1rem' }}>Add Routine</button>
           </form>
         </div>
 
