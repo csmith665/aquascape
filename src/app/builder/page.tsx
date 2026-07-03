@@ -3,18 +3,34 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Biome } from '@prisma/client';
-import { buildRecommendation, BuildResult } from './actions';
+import { buildRecommendation, saveBuild, BuildResult } from './actions';
 import { SavedBuildsList } from './SavedBuildsList';
 
 export default function BuilderPage() {
   const [result, setResult] = useState<BuildResult | null>(null);
   const [pending, setPending] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [selectedCount, setSelectedCount] = useState(0);
 
   async function handleSubmit(formData: FormData) {
     setPending(true);
+    setSavedId(null);
     const res = await buildRecommendation(formData);
     setResult(res);
+    setSelectedCount(0);
     setPending(false);
+  }
+
+  function toggleSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    setSelectedCount((c) => (e.target.checked ? c + 1 : c - 1));
+  }
+
+  async function handleSave(formData: FormData) {
+    setSaving(true);
+    const res = await saveBuild(formData);
+    setSavedId(res.projectId);
+    setSaving(false);
   }
 
   return (
@@ -150,19 +166,26 @@ export default function BuilderPage() {
 
       {result && (
         <section className="section">
-          <h2>Recommendations for {result.project.name}</h2>
+          <h2>Recommendations for {result.params.name}</h2>
           <p style={{ color: '#5f6f81', marginBottom: '1.5rem' }}>
-            {result.project.type.replace('_', ' ')}
-            {result.project.biome && (
-              <> · {result.project.biome.replace(/_/g, ' ')}</>
+            {result.params.type.replace('_', ' ')}
+            {result.params.biome && (
+              <> · {result.params.biome.replace(/_/g, ' ')}</>
             )}
-            {' · '}{result.project.tankSize} gallons
+            {' · '}{result.params.tankSize} gallons
           </p>
-          <p style={{ marginBottom: '1.5rem' }}>
-            <Link href={`/projects/${result.project.id}`} className="btn btn-secondary">
-              View saved build →
-            </Link>
-          </p>
+
+          {savedId && (
+            <div className="card" style={{ background: '#d1fae5', color: '#065f46', marginBottom: '1.5rem' }}>
+              <h3>Build saved!</h3>
+              <p style={{ marginBottom: '1rem' }}>
+                {selectedCount} item(s) saved to your build.
+              </p>
+              <Link href={`/projects/${savedId}`} className="btn" style={{ display: 'inline-block' }}>
+                View saved build →
+              </Link>
+            </div>
+          )}
 
           {result.warnings.length > 0 && (
             <div className="card" style={{ background: '#fff3cd', color: '#856404', marginBottom: '1.5rem' }}>
@@ -197,39 +220,120 @@ export default function BuilderPage() {
             </div>
           )}
 
-          <h3 style={{ color: '#1a5490', marginBottom: '1rem' }}>Recommended Animals</h3>
-          <div className="grid">
-            {result.animals.map((animal) => (
-              <div key={animal.id} className="card">
-                <h4>{animal.name}</h4>
-                <p style={{ fontSize: '0.9rem' }}>{animal.description?.slice(0, 120)}...</p>
-                <div style={{ marginTop: '0.75rem' }}>
-                  <span className={`badge badge-${animal.difficulty.toLowerCase()}`}>{animal.difficulty}</span>
-                  {animal.minTankSize && (
-                    <span className="badge" style={{ background: '#e7f3ff', color: '#1a5490' }}>
-                      Min {animal.minTankSize} gal
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          {result.animals.length === 0 && result.plants.length === 0 ? (
+            <div className="card" style={{ marginBottom: '1.5rem' }}>
+              <h3>No animals or plants match your filters</h3>
+              <p style={{ color: '#666' }}>Try a different setup type, biome, or skill level.</p>
+            </div>
+          ) : (
+            <form action={handleSave}>
+              <input type="hidden" name="name" value={result.params.name} />
+              <input type="hidden" name="type" value={result.params.type} />
+              {result.params.biome && <input type="hidden" name="biome" value={result.params.biome} />}
+              <input type="hidden" name="tankSize" value={result.params.tankSize} />
+              <input type="hidden" name="skillLevel" value={result.params.skillLevel} />
+              <input type="hidden" name="maintenancePref" value={result.params.maintenancePref} />
 
-          <h3 style={{ color: '#1a5490', margin: '2rem 0 1rem' }}>Recommended Plants</h3>
-          <div className="grid">
-            {result.plants.map((plant) => (
-              <div key={plant.id} className="card">
-                <h4>{plant.name}</h4>
-                <p style={{ fontSize: '0.9rem' }}>{plant.description?.slice(0, 120)}...</p>
-                <div style={{ marginTop: '0.75rem' }}>
-                  <span className={`badge badge-${plant.difficulty.toLowerCase()}`}>{plant.difficulty}</span>
-                  <span className="badge" style={{ background: '#fff4e6', color: '#92400e' }}>
-                    {plant.lightRequirement} Light
-                  </span>
+              <p style={{ marginBottom: '1rem', color: '#666' }}>
+                Check the animals and plants you want to include, set quantities, then save your build.
+              </p>
+
+              <h3 style={{ color: '#1a5490', marginBottom: '1rem' }}>Recommended Animals</h3>
+              {result.animals.length === 0 ? (
+                <p style={{ color: '#666', marginBottom: '1.5rem' }}>No animals match these filters.</p>
+              ) : (
+                <div className="grid" style={{ marginBottom: '1.5rem' }}>
+                  {result.animals.map((animal) => (
+                    <div key={animal.id} className="card">
+                      <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          name={`animal-${animal.id}`}
+                          value="on"
+                          onChange={toggleSelected}
+                          style={{ marginTop: '0.25rem', flexShrink: 0 }}
+                        />
+                        <span>
+                          <h4>{animal.name}</h4>
+                          <p style={{ fontSize: '0.9rem' }}>{animal.description?.slice(0, 120)}...</p>
+                        </span>
+                      </label>
+                      <div style={{ marginTop: '0.75rem', marginLeft: '1.5rem' }}>
+                        <span className={`badge badge-${animal.difficulty.toLowerCase()}`}>{animal.difficulty}</span>
+                        {animal.minTankSize && (
+                          <span className="badge" style={{ background: '#e7f3ff', color: '#1a5490' }}>
+                            Min {animal.minTankSize} gal
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ marginTop: '0.5rem', marginLeft: '1.5rem' }}>
+                        <label style={{ fontSize: '0.85rem', marginRight: '0.5rem' }}>Qty:</label>
+                        <input
+                          type="number"
+                          name={`qty-animal-${animal.id}`}
+                          min="1"
+                          max="999"
+                          defaultValue="1"
+                          style={{ width: '70px', padding: '0.25rem 0.5rem' }}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
-          </div>
+              )}
+
+              <h3 style={{ color: '#1a5490', margin: '2rem 0 1rem' }}>Recommended Plants</h3>
+              {result.plants.length === 0 ? (
+                <p style={{ color: '#666', marginBottom: '1.5rem' }}>No plants match these filters.</p>
+              ) : (
+                <div className="grid" style={{ marginBottom: '1.5rem' }}>
+                  {result.plants.map((plant) => (
+                    <div key={plant.id} className="card">
+                      <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          name={`plant-${plant.id}`}
+                          value="on"
+                          onChange={toggleSelected}
+                          style={{ marginTop: '0.25rem', flexShrink: 0 }}
+                        />
+                        <span>
+                          <h4>{plant.name}</h4>
+                          <p style={{ fontSize: '0.9rem' }}>{plant.description?.slice(0, 120)}...</p>
+                        </span>
+                      </label>
+                      <div style={{ marginTop: '0.75rem', marginLeft: '1.5rem' }}>
+                        <span className={`badge badge-${plant.difficulty.toLowerCase()}`}>{plant.difficulty}</span>
+                        <span className="badge" style={{ background: '#fff4e6', color: '#92400e' }}>
+                          {plant.lightRequirement} Light
+                        </span>
+                      </div>
+                      <div style={{ marginTop: '0.5rem', marginLeft: '1.5rem' }}>
+                        <label style={{ fontSize: '0.85rem', marginRight: '0.5rem' }}>Qty:</label>
+                        <input
+                          type="number"
+                          name={`qty-plant-${plant.id}`}
+                          min="1"
+                          max="999"
+                          defaultValue="1"
+                          style={{ width: '70px', padding: '0.25rem 0.5rem' }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={saving}
+                className="btn"
+                style={{ marginTop: '0.5rem' }}
+              >
+                {saving ? 'Saving...' : `Save Build${selectedCount > 0 ? ` (${selectedCount} selected)` : ''}`}
+              </button>
+            </form>
+          )}
 
           <h3 style={{ color: '#1a5490', margin: '2rem 0 1rem' }}>Recommended Substrate</h3>
           {result.substrates.length === 0 ? (

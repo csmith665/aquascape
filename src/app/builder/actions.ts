@@ -128,22 +128,12 @@ export async function buildRecommendation(formData: FormData) {
   const substrates = withProducts.filter((h) => h.kind === 'substrate');
   const hardscape = withProducts.filter((h) => h.kind !== 'substrate');
 
-  const project = await prisma.builderProject.create({
-    data: {
-      name: data.name,
-      type: data.type,
-      biome: data.biome,
-      tankSize: data.tankSize,
-      skillLevel: data.skillLevel,
-      maintenancePref: data.maintenancePref,
-    },
-  });
-
   const warnings = await generateWarnings(data, suitableAnimals.slice(0, 8));
   const setupNotes = generateSetupNotes(data.type, data.biome, data.skillLevel, data.maintenancePref, data.tankSize);
 
+  // Return recommendations WITHOUT creating a project — the user selects
+  // what they want and calls saveBuild separately.
   return {
-    project,
     params: data,
     animals: suitableAnimals.slice(0, 8),
     plants: suitablePlants.slice(0, 8),
@@ -153,6 +143,64 @@ export async function buildRecommendation(formData: FormData) {
     setupNotes,
     warnings,
   };
+}
+
+const saveSchema = z.object({
+  name: z.string().min(1).max(100),
+  type: z.nativeEnum(SetupType),
+  biome: z.nativeEnum(Biome).optional(),
+  tankSize: z.coerce.number().min(1).max(1000),
+  skillLevel: z.nativeEnum(Difficulty),
+  maintenancePref: z.nativeEnum(MaintenanceLevel),
+});
+
+export type SaveResult = { projectId: string };
+
+export async function saveBuild(formData: FormData): Promise<SaveResult> {
+  const data = saveSchema.parse({
+    name: formData.get('name'),
+    type: formData.get('type'),
+    biome: formData.get('biome') || undefined,
+    tankSize: formData.get('tankSize'),
+    skillLevel: formData.get('skillLevel'),
+    maintenancePref: formData.get('maintenancePref'),
+  });
+
+  // Collect selected animal entries: animalId -> quantity
+  const animalEntries: { animalId: string; quantity: number }[] = [];
+  const plantEntries: { plantId: string; quantity: number }[] = [];
+
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith('animal-') && value === 'on') {
+      const id = key.slice('animal-'.length);
+      const qty = Number(formData.get(`qty-animal-${id}`) || 1);
+      if (id) animalEntries.push({ animalId: id, quantity: Math.max(1, Math.min(999, qty)) });
+    }
+    if (key.startsWith('plant-') && value === 'on') {
+      const id = key.slice('plant-'.length);
+      const qty = Number(formData.get(`qty-plant-${id}`) || 1);
+      if (id) plantEntries.push({ plantId: id, quantity: Math.max(1, Math.min(999, qty)) });
+    }
+  }
+
+  const entries = [
+    ...animalEntries.map((a) => ({ animalId: a.animalId, plantId: null, quantity: a.quantity })),
+    ...plantEntries.map((p) => ({ animalId: null, plantId: p.plantId, quantity: p.quantity })),
+  ];
+
+  const project = await prisma.builderProject.create({
+    data: {
+      name: data.name,
+      type: data.type,
+      biome: data.biome,
+      tankSize: data.tankSize,
+      skillLevel: data.skillLevel,
+      maintenancePref: data.maintenancePref,
+      entries: entries.length > 0 ? { create: entries } : undefined,
+    },
+  });
+
+  return { projectId: project.id };
 }
 
 async function generateWarnings(
