@@ -14,6 +14,8 @@ const img = (type: 'animal' | 'plant' | 'product', name: string) => {
 async function main() {
   console.log('Seeding Aquascape with expanded data...');
 
+  await prisma.animalCompatibility.deleteMany({});
+  await prisma.animal.deleteMany({});
   await prisma.animal.createMany({
     data: [
       { name: 'Neon Tetra', scientificName: 'Paracheirodon innesi', category: AnimalCategory.FISH, habitats: [Habitat.FRESHWATER],
@@ -195,6 +197,7 @@ async function main() {
     ],
   });
 
+  await prisma.plant.deleteMany({});
   await prisma.plant.createMany({
     data: [
       { name: 'Java Fern', scientificName: 'Microsorum pteropus', category: PlantCategory.AQUATIC, habitats: [Habitat.FRESHWATER],
@@ -274,6 +277,7 @@ async function main() {
     ],
   });
 
+  await prisma.product.deleteMany({});
   await prisma.product.createMany({
     data: [
       { name: 'Fluval 407 Canister Filter', brand: 'Fluval', category: ProductCategory.FILTER, description: 'Reliable canister filter for tanks 50-100 gallons. 383 GPH, quiet, multi-stage.', imageUrl: img('product', 'Fluval 407'), priceRange: PriceRange.MID_RANGE, rating: 4.7, tags: ['canister', 'large-tank', 'quiet'] },
@@ -330,6 +334,17 @@ async function main() {
       { name: 'Zoo Med Hygrometer Thermometer', brand: 'Zoo Med', category: ProductCategory.TESTING, description: 'Digital combo gauge for temperature and humidity in terrariums.', imageUrl: img('product', 'Hygrometer Thermometer'), priceRange: PriceRange.BUDGET, rating: 4.5, tags: ['hygrometer', 'thermometer', 'reptile'] },
       { name: 'ReptiCalcium with D3', brand: 'Zoo Med', category: ProductCategory.SUPPLEMENT, description: 'Calcium and vitamin D3 supplement for reptiles and amphibians.', imageUrl: img('product', 'ReptiCalcium D3'), priceRange: PriceRange.BUDGET, rating: 4.6, tags: ['supplement', 'calcium', 'reptile'] },
       { name: 'Red Sea Reef Foundation Test Kit', brand: 'Red Sea', category: ProductCategory.TESTING, description: 'Tests for calcium, alkalinity, and magnesium in reef aquariums.', imageUrl: img('product', 'Reef Test Kit'), priceRange: PriceRange.PREMIUM, rating: 4.7, tags: ['reef', 'testing', 'calcium'] },
+      { name: 'API Algae Scraper Pad', brand: 'API', category: ProductCategory.CLEANING, description: 'Non-scratch scrubbing pad for glass and acrylic aquariums.', imageUrl: img('product', 'Algae Scraper Pad'), priceRange: PriceRange.BUDGET, rating: 4.5, tags: ['cleaning', 'algae', 'glass'] },
+      { name: 'Flipper Magnetic Algae Cleaner', brand: 'Flipper', category: ProductCategory.CLEANING, description: 'Magnetic cleaner with two scrubbing sides — flips inside the tank to switch between glass and acrylic-safe blades.', imageUrl: img('product', 'Flipper Cleaner'), priceRange: PriceRange.MID_RANGE, rating: 4.7, tags: ['cleaning', 'magnetic', 'algae'] },
+      { name: 'Aqueon Siphon Vacuum', brand: 'Aqueon', category: ProductCategory.CLEANING, description: 'Gravel vacuum with self-priming bulb for easy water changes. 10 inch and 24 inch sizes.', imageUrl: img('product', 'Siphon Vacuum'), priceRange: PriceRange.BUDGET, rating: 4.6, tags: ['cleaning', 'siphon', 'water-change'] },
+      { name: 'Penn-Plax NetCombo Set', brand: 'Penn-Plax', category: ProductCategory.TOOL, description: 'Two aquarium nets (4" and 8") for catching, transferring, or skimming debris.', imageUrl: img('product', 'NetCombo Set'), priceRange: PriceRange.BUDGET, rating: 4.4, tags: ['tool', 'net', 'transfer'] },
+      { name: 'Aquatic Arts Stainless Tweezers', brand: 'Aquatic Arts', category: ProductCategory.TOOL, description: '12-inch curved planting tweezers for placing carpet and stem plants. Rustproof stainless steel.', imageUrl: img('product', 'Planting Tweezers'), priceRange: PriceRange.MID_RANGE, rating: 4.8, tags: ['tool', 'tweezers', 'aquascape', 'stainless'] },
+      { name: 'Aquatic Art Stainless Scissors', brand: 'Aquatic Arts', category: ProductCategory.TOOL, description: 'Curved trimming scissors for maintaining stem plants and carpets.', imageUrl: img('product', 'Trimming Scissors'), priceRange: PriceRange.MID_RANGE, rating: 4.7, tags: ['tool', 'scissors', 'trim', 'aquascape'] },
+      { name: 'Pangea Reptile Feeding Tongs', brand: 'Pangea', category: ProductCategory.TOOL, description: '10-inch stainless feeding tongs for offering feeders to reptiles and amphibians. Powder-coated grip.', imageUrl: img('product', 'Feeding Tongs'), priceRange: PriceRange.BUDGET, rating: 4.7, tags: ['tool', 'tongs', 'feeding', 'reptile'] },
+      { name: 'Python No Spill Water Changer', brand: 'Python', category: ProductCategory.HOSE_TUBING, description: '25-foot hose that connects directly to a sink for drain-and-fill water changes. No buckets.', imageUrl: img('product', 'Python Water Changer'), priceRange: PriceRange.MID_RANGE, rating: 4.8, tags: ['hose', 'water-change', 'sink', 'no-buckets'] },
+      { name: 'Aqueon Vinyl Tubing', brand: 'Aqueon', category: ProductCategory.HOSE_TUBING, description: 'Clear flexible vinyl tubing for filters, CO2, and DIY projects. Multiple diameters available.', imageUrl: img('product', 'Vinyl Tubing'), priceRange: PriceRange.BUDGET, rating: 4.5, tags: ['hose', 'vinyl', 'flexible'] },
+      { name: 'Cobalt Bottle Brush Set', brand: 'Cobalt', category: ProductCategory.CLEANING, description: 'Long-handled brushes for cleaning tubing, filter pipes, and narrow tubes.', imageUrl: img('product', 'Bottle Brush Set'), priceRange: PriceRange.BUDGET, rating: 4.4, tags: ['cleaning', 'brush', 'tubing', 'filter'] },
+      { name: 'Marina EasyClean Gravel Cleaner', brand: 'Marina', category: ProductCategory.CLEANING, description: 'Compact gravel cleaner with a slim design for nano and small tanks where larger siphons won\'t fit.', imageUrl: img('product', 'EasyClean Gravel Cleaner'), priceRange: PriceRange.BUDGET, rating: 4.3, tags: ['cleaning', 'gravel', 'nano', 'siphon'] },
     ],
   });
 

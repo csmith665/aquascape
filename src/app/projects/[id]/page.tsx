@@ -5,6 +5,7 @@ import { ProductCategory } from '@prisma/client';
 import { recommendHardscape, matchHardscapeProducts } from '@/lib/hardscape';
 import { generateSetupNotes } from '@/lib/setupNotes';
 import { deleteProject } from '../actions';
+import { ProductImage } from '@/components/ProductImage';
 
 export const dynamic = 'force-dynamic';
 
@@ -177,7 +178,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
             {substrates.map((item) => (
               <div key={item.name} className="card">
                 {item.product?.imageUrl && (
-                  <img src={item.product.imageUrl} alt={item.name} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '6px', marginBottom: '0.75rem' }} />
+                  <ProductImage src={item.product.imageUrl} alt={item.name} />
                 )}
                 <h4>{item.name}</h4>
                 <p style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{item.why}</p>
@@ -202,7 +203,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
             {hardscape.map((item) => (
               <div key={item.name} className="card">
                 {item.product?.imageUrl && (
-                  <img src={item.product.imageUrl} alt={item.name} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '6px', marginBottom: '0.75rem' }} />
+                  <ProductImage src={item.product.imageUrl} alt={item.name} />
                 )}
                 <h4>{item.name}</h4>
                 <p style={{ fontSize: '0.9rem', marginTop: '0.25rem' }}>{item.why}</p>

@@ -7,6 +7,7 @@ import { assessCompatibility } from '@/lib/compatibility';
 export type CompatibilityResult = {
   level: CompatibilityLevel;
   notes: string;
+  explicit: boolean;
   animalA: { id: string; name: string; category: string; maxSize: number | null };
   animalB: { id: string; name: string; category: string; maxSize: number | null };
 } | null;
@@ -31,11 +32,12 @@ export async function checkCompatibility(animalAId: string, animalBId: string): 
     },
   });
 
-  const { level, notes } = assessCompatibility(animalA, animalB, explicit?.level, explicit?.notes);
+  const { level, notes, explicit: isExplicit } = assessCompatibility(animalA, animalB, explicit?.level, explicit?.notes);
 
   return {
     level,
     notes: notes.join(' '),
+    explicit: isExplicit,
     animalA: { id: animalA.id, name: animalA.name, category: animalA.category, maxSize: animalA.maxSize },
     animalB: { id: animalB.id, name: animalB.name, category: animalB.category, maxSize: animalB.maxSize },
   };

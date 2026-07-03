@@ -58,6 +58,62 @@ export default function GuidesPage() {
       readTime: '10 min',
       href: '/articles/upkeep-requirements',
     },
+    {
+      title: 'Cycling a New Aquarium',
+      description: 'The most important step before adding any livestock — why and how to cycle a tank.',
+      difficulty: 'Beginner',
+      readTime: '5 min',
+      href: '/articles/setup-cycling',
+    },
+    {
+      title: 'Water Chemistry & Treatment',
+      description: 'Source water, conditioning, salinity, and reef parameters across setup types.',
+      difficulty: 'Beginner',
+      readTime: '6 min',
+      href: '/articles/setup-water',
+    },
+    {
+      title: 'Temperature & Heating',
+      description: 'Sizing heaters, using controllers, and creating thermal gradients for terrestrial species.',
+      difficulty: 'Beginner',
+      readTime: '5 min',
+      href: '/articles/setup-temperature',
+    },
+    {
+      title: 'Lighting',
+      description: 'Photoperiod, planted-tank light tiers, and UVB for reptiles — what to set up and how long to run it.',
+      difficulty: 'Beginner',
+      readTime: '5 min',
+      href: '/articles/setup-lighting',
+    },
+    {
+      title: 'Stocking Your Tank',
+      description: 'Adding livestock slowly, quarantining new arrivals, and matching fish to tank size.',
+      difficulty: 'Beginner',
+      readTime: '6 min',
+      href: '/articles/setup-stocking',
+    },
+    {
+      title: 'Maintenance Philosophy',
+      description: 'Low-maintenance vs. high-maintenance setups — match your stocking to your time commitment.',
+      difficulty: 'Beginner',
+      readTime: '5 min',
+      href: '/articles/setup-maintenance',
+    },
+    {
+      title: 'Humidity & Environment',
+      description: 'Tropical vivariums, desert terrariums, wetlands — humidity, ventilation, and biomes.',
+      difficulty: 'Beginner',
+      readTime: '5 min',
+      href: '/articles/setup-environment',
+    },
+    {
+      title: 'Safety & Setup Considerations',
+      description: 'Chemicals, weight, and equipment — what to know before you fill the tank.',
+      difficulty: 'Beginner',
+      readTime: '6 min',
+      href: '/articles/setup-safety',
+    },
   ];
 
   return (
