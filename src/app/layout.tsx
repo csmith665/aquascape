@@ -9,9 +9,6 @@ export const metadata: Metadata = {
 const navLinks = [
   { href: '/builder', label: 'Builder', icon: 'beaker' },
   { href: '/catalog', label: 'Catalog', icon: 'grid' },
-  { href: '/animals', label: 'Animals', icon: 'fish' },
-  { href: '/plants', label: 'Plants', icon: 'leaf' },
-  { href: '/products', label: 'Products', icon: 'box' },
   { href: '/compatibility', label: 'Compatibility', icon: 'arrows' },
   { href: '/tracking', label: 'My Tanks', icon: 'gauge' },
   { href: '/setup-checklist', label: 'Checklist', icon: 'check' },

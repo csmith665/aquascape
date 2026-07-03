@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { Biome, ProductCategory } from '@prisma/client';
+import { useMemo, useState } from 'react';
+import { Biome, CompatibilityLevel, ProductCategory } from '@prisma/client';
 import { buildRecommendation, saveBuild, BuildResult } from './actions';
 import { SavedBuildsList } from './SavedBuildsList';
 import { ShoppingListModal, ShoppingItem } from './ShoppingListModal';
 import { generateStockingGuidance } from '@/lib/stocking';
+import { assessCompatibility } from '@/lib/compatibility';
 
 const slug = (s: string) =>
   s
@@ -82,6 +83,42 @@ export default function BuilderPage() {
   const livestockCount = shoppingList.filter((i) => i.section === 'livestock').length;
   const plantCount = shoppingList.filter((i) => i.section === 'plants').length;
   const totalSelected = shoppingList.length;
+
+  // Live pairwise compatibility across the animals the user has actually checked.
+  // Uses the explicit rules pre-fetched in BuildResult plus the rule-based
+  // assessment in src/lib/compatibility.ts.
+  const compatAssessments = useMemo(() => {
+    if (!result) return [];
+    const selectedAnimals = shoppingList
+      .filter((i) => i.section === 'livestock')
+      .map((i) => {
+        const a = result.animals.find((x) => x.id === i.id.replace('animal-', ''));
+        return a ? { id: a.id, name: a.name, animal: a, qty: i.quantity } : null;
+      })
+      .filter((x): x is { id: string; name: string; animal: typeof result.animals[number]; qty: number } => x !== null);
+
+    const ruleKey = (a: string, b: string) => [a, b].sort().join('|');
+    const rules = new Map(
+      (result.compatRules ?? []).map((r) => [ruleKey(r.aId, r.bId), r])
+    );
+
+    const out: { aName: string; bName: string; level: CompatibilityLevel; notes: string[] }[] = [];
+    for (let i = 0; i < selectedAnimals.length; i++) {
+      for (let j = i + 1; j < selectedAnimals.length; j++) {
+        const a = selectedAnimals[i].animal;
+        const b = selectedAnimals[j].animal;
+        const rule = rules.get(ruleKey(a.id, b.id));
+        const { level, notes } = assessCompatibility(a, b, rule?.level, rule?.notes);
+        if (level !== CompatibilityLevel.COMPATIBLE) {
+          out.push({ aName: a.name, bName: b.name, level, notes });
+        }
+      }
+    }
+    return out;
+  }, [shoppingList, result]);
+
+  const incompatibleCount = compatAssessments.filter((c) => c.level === CompatibilityLevel.INCOMPATIBLE).length;
+  const cautionCount = compatAssessments.filter((c) => c.level === CompatibilityLevel.CAUTION).length;
 
   return (
     <>
@@ -218,14 +255,30 @@ export default function BuilderPage() {
         <section className="section">
           <h2>Recommendations for {result.params.name}</h2>
           {savedId && (
-            <div className="card" style={{ background: '#d1fae5', color: '#065f46', marginBottom: '1.5rem' }}>
+            <div className="card" style={{ background: 'var(--color-success-soft)', color: 'var(--color-success)', marginBottom: '1.5rem' }}>
               <h3>Build saved!</h3>
-              <p style={{ marginBottom: '1rem' }}>
-                {livestockCount} animal(s) and {plantCount} plant(s) saved to your build.
-                {' '}
-                <span style={{ fontSize: '0.85rem', color: '#047857' }}>
-                  (Saved builds store livestock and plants. Use the Shopping List to capture equipment, substrate, and hardscape.)
-                </span>
+              <p style={{ marginBottom: '0.5rem' }}>
+                {livestockCount} animal{livestockCount === 1 ? '' : 's'} and {plantCount} plant{plantCount === 1 ? '' : 's'} saved to your build.
+              </p>
+              {livestockCount > 1 && (
+                <p style={{ marginBottom: '0.75rem', fontSize: '0.9rem' }}>
+                  {incompatibleCount > 0 || cautionCount > 0 ? (
+                    <>
+                      <strong style={{ color: incompatibleCount > 0 ? 'var(--color-danger)' : 'var(--color-warning)' }}>
+                        Compatibility:
+                      </strong>{' '}
+                      {incompatibleCount > 0 && `${incompatibleCount} incompatible pair${incompatibleCount === 1 ? '' : 's'}`}
+                      {incompatibleCount > 0 && cautionCount > 0 ? ', ' : ''}
+                      {cautionCount > 0 && `${cautionCount} caution${cautionCount === 1 ? '' : 's'}`}
+                      {' — review in Selections above.'}
+                    </>
+                  ) : (
+                    <span style={{ color: 'var(--color-success)' }}>No compatibility conflicts among selected livestock.</span>
+                  )}
+                </p>
+              )}
+              <p style={{ marginBottom: '1rem', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                Saved builds store livestock and plants. Use the Shopping List to capture equipment, substrate, and hardscape.
               </p>
               <Link href={`/projects/${savedId}`} className="btn" style={{ display: 'inline-block' }}>
                 View saved build →
@@ -350,6 +403,67 @@ export default function BuilderPage() {
               <p style={{ marginBottom: '1rem', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
                 Check items to include them — animals and plants are saved with the build; everything you check also counts toward your shopping list.
               </p>
+
+              {livestockCount > 0 && (
+                <div
+                  className="card"
+                  style={{
+                    marginBottom: '1.25rem',
+                    borderColor: incompatibleCount > 0
+                      ? 'var(--color-danger)'
+                      : cautionCount > 0
+                        ? 'var(--color-warning)'
+                        : 'var(--color-border)',
+                    background: incompatibleCount > 0
+                      ? 'var(--color-danger-soft)'
+                      : cautionCount > 0
+                        ? 'var(--color-warning-soft)'
+                        : 'var(--color-surface)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: compatAssessments.length > 0 ? '0.75rem' : 0 }}>
+                    <h3 style={{ margin: 0, color: incompatibleCount > 0 ? 'var(--color-danger)' : cautionCount > 0 ? 'var(--color-warning)' : 'var(--color-primary-dark)' }}>
+                      Your selections
+                    </h3>
+                    {compatAssessments.length > 0 ? (
+                      <span style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        {incompatibleCount > 0 && (
+                          <span className="badge" style={{ background: 'var(--color-danger-soft)', color: 'var(--color-danger)', margin: 0 }}>
+                            {incompatibleCount} incompatible pair{incompatibleCount === 1 ? '' : 's'}
+                          </span>
+                        )}
+                        {cautionCount > 0 && (
+                          <span className="badge" style={{ background: 'var(--color-warning-soft)', color: 'var(--color-warning)', margin: 0 }}>
+                            {cautionCount} caution{cautionCount === 1 ? '' : 's'}
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="badge badge-success" style={{ margin: 0 }}>
+                        No conflicts
+                      </span>
+                    )}
+                  </div>
+                  {livestockCount > 0 && (
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                      {livestockCount} animal{livestockCount === 1 ? '' : 's'} selected
+                      {plantCount > 0 ? ` · ${plantCount} plant${plantCount === 1 ? '' : 's'}` : ''}
+                    </p>
+                  )}
+                  {compatAssessments.length > 0 && (
+                    <ul style={{ marginTop: '0.5rem', marginBottom: 0, paddingLeft: '1.25rem' }}>
+                      {compatAssessments.map((c, i) => (
+                        <li key={i} style={{ marginBottom: '0.4rem', fontSize: '0.92rem' }}>
+                          <strong style={{ color: c.level === CompatibilityLevel.INCOMPATIBLE ? 'var(--color-danger)' : 'var(--color-warning)' }}>
+                            {c.level === CompatibilityLevel.INCOMPATIBLE ? 'Incompatible' : 'Caution'}:
+                          </strong>{' '}
+                          {c.aName} + {c.bName} — {c.notes.join(' ')}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
 
               <h3 style={{ color: '#1a5490', marginBottom: '1rem' }}>Recommended Animals</h3>
               {result.animals.length === 0 ? (

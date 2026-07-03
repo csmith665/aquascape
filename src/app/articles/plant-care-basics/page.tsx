@@ -86,7 +86,7 @@ export default function PlantCareBasicsArticlePage() {
           <Link href="/guides" className="btn" style={{ marginRight: '1rem' }}>
             ← Back to Guides
           </Link>
-          <Link href="/plants" className="btn">
+          <Link href="/catalog?type=plant" className="btn">
             Browse Plants
           </Link>
         </div>

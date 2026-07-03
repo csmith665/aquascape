@@ -1,42 +1,35 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Animal, Plant, Product } from '@prisma/client';
+import { Biome, Difficulty, Habitat, LightLevel, PriceRange } from '@prisma/client';
 
-type CatalogEntry =
-  | {
-      kind: 'animal';
-      id: string;
-      name: string;
-      subtitle: string | null;
-      category: string;
-      difficulty: string | null;
-      info: string;
-      imageUrl: string | null;
-      tags: string[];
-    }
-  | {
-      kind: 'plant';
-      id: string;
-      name: string;
-      subtitle: string | null;
-      category: string;
-      difficulty: string | null;
-      info: string;
-      imageUrl: string | null;
-      tags: string[];
-    }
-  | {
-      kind: 'product';
-      id: string;
-      name: string;
-      subtitle: string | null;
-      category: string;
-      difficulty: string | null;
-      info: string;
-      imageUrl: string | null;
-      tags: string[];
-    };
+type CatalogEntry = {
+  kind: 'animal' | 'plant' | 'product';
+  id: string;
+  name: string;
+  subtitle: string | null;
+  category: string;
+  difficulty: string | null;
+  info: string;
+  imageUrl: string | null;
+  tags: string[];
+  habitats?: Habitat[];
+  biome?: Biome | null;
+  lightRequirement?: LightLevel;
+  priceRange?: PriceRange | null;
+};
+
+type InitialParams = {
+  type: string;
+  category: string;
+  difficulty: string;
+  habitat: string;
+  biome: string;
+  light: string;
+  priceRange: string;
+  search: string;
+};
 
 const humanize = (s: string) =>
   s.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -53,10 +46,12 @@ const CATEGORY_ICONS: Record<CatalogEntry['kind'], string> = {
   product: 'M3 7 12 3 21 7 12 11 3 7Z',
 };
 
+type TypeFilter = 'all' | CatalogEntry['kind'];
+
 function buildEntries(
-  animals: { id: string; name: string; scientificName: string | null; category: string; difficulty: string; description: string | null; imageUrl: string | null; minTankSize: number | null; tempMin: number | null; tempMax: number | null; tags: string[] }[],
-  plants: { id: string; name: string; scientificName: string | null; category: string; difficulty: string; lightRequirement: string; description: string | null; imageUrl: string | null; tags: string[] }[],
-  products: { id: string; name: string; brand: string | null; category: string; priceRange: string | null; rating: number | null; description: string | null; imageUrl: string | null; tags: string[] }[]
+  animals: { id: string; name: string; scientificName: string | null; category: string; difficulty: string; description: string | null; imageUrl: string | null; minTankSize: number | null; tempMin: number | null; tempMax: number | null; habitats: Habitat[]; biome: Biome; tags: string[] }[],
+  plants: { id: string; name: string; scientificName: string | null; category: string; difficulty: string; lightRequirement: LightLevel; description: string | null; imageUrl: string | null; biome: Biome; tags: string[] }[],
+  products: { id: string; name: string; brand: string | null; category: string; priceRange: PriceRange | null; rating: number | null; description: string | null; imageUrl: string | null; tags: string[] }[]
 ): CatalogEntry[] {
   const animEntries: CatalogEntry[] = animals.map((a) => ({
     kind: 'animal',
@@ -68,6 +63,8 @@ function buildEntries(
     info: a.minTankSize ? `Min ${a.minTankSize} gal` : '',
     imageUrl: a.imageUrl,
     tags: a.tags,
+    habitats: a.habitats,
+    biome: a.biome,
   }));
 
   const plantEntries: CatalogEntry[] = plants.map((p) => ({
@@ -80,6 +77,8 @@ function buildEntries(
     info: `${humanize(p.lightRequirement)} light`,
     imageUrl: p.imageUrl,
     tags: p.tags,
+    biome: p.biome,
+    lightRequirement: p.lightRequirement,
   }));
 
   const prodEntries: CatalogEntry[] = products.map((p) => ({
@@ -92,6 +91,7 @@ function buildEntries(
     info: p.priceRange ? humanize(p.priceRange) : '',
     imageUrl: p.imageUrl,
     tags: p.tags,
+    priceRange: p.priceRange,
   }));
 
   return [...animEntries, ...plantEntries, ...prodEntries].sort((a, b) =>
@@ -99,21 +99,56 @@ function buildEntries(
   );
 }
 
-type TypeFilter = 'all' | CatalogEntry['kind'];
+function useUrlSyncedState(initial: InitialParams) {
+  const [state, setState] = useState<InitialParams>(initial);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    Object.entries(state).forEach(([key, value]) => {
+      if (value) url.searchParams.set(key, value);
+      else url.searchParams.delete(key);
+    });
+    window.history.replaceState({}, '', url.toString());
+  }, [state]);
+
+  return [state, setState] as const;
+}
 
 export function CatalogTable({
   animals,
   plants,
   products,
+  initialParams,
 }: {
-  animals: { id: string; name: string; scientificName: string | null; category: string; difficulty: string; description: string | null; imageUrl: string | null; minTankSize: number | null; tempMin: number | null; tempMax: number | null; tags: string[] }[];
-  plants: { id: string; name: string; scientificName: string | null; category: string; difficulty: string; lightRequirement: string; description: string | null; imageUrl: string | null; tags: string[] }[];
-  products: { id: string; name: string; brand: string | null; category: string; priceRange: string | null; rating: number | null; description: string | null; imageUrl: string | null; tags: string[] }[];
+  animals: { id: string; name: string; scientificName: string | null; category: string; difficulty: string; description: string | null; imageUrl: string | null; minTankSize: number | null; tempMin: number | null; tempMax: number | null; habitats: Habitat[]; biome: Biome; tags: string[] }[];
+  plants: { id: string; name: string; scientificName: string | null; category: string; difficulty: string; lightRequirement: LightLevel; description: string | null; imageUrl: string | null; biome: Biome; tags: string[] }[];
+  products: { id: string; name: string; brand: string | null; category: string; priceRange: PriceRange | null; rating: number | null; description: string | null; imageUrl: string | null; tags: string[] }[];
+  initialParams: InitialParams;
 }) {
   const allEntries = useMemo(() => buildEntries(animals, plants, products), [animals, plants, products]);
+  const [params, setParams] = useUrlSyncedState(initialParams);
 
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
-  const [search, setSearch] = useState('');
+  const typeFilter: TypeFilter =
+    params.type === 'animal' || params.type === 'plant' || params.type === 'product'
+      ? params.type
+      : 'all';
+
+  const setTypeFilter = (value: TypeFilter) => {
+    setParams({
+      ...params,
+      type: value === 'all' ? '' : value,
+      category: '',
+      difficulty: '',
+      habitat: '',
+      biome: '',
+      light: '',
+      priceRange: '',
+    });
+  };
+
+  const update = (key: keyof InitialParams, value: string) => {
+    setParams({ ...params, [key]: value });
+  };
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -123,21 +158,38 @@ export function CatalogTable({
     return Array.from(set).sort();
   }, [allEntries, typeFilter]);
 
-  const [category, setCategory] = useState<string>('');
-
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = params.search.trim().toLowerCase();
     return allEntries.filter((e) => {
       if (typeFilter !== 'all' && e.kind !== typeFilter) return false;
-      if (category && e.category !== category) return false;
-      if (!q) return true;
-      return (
-        e.name.toLowerCase().includes(q) ||
-        e.subtitle?.toLowerCase().includes(q) ||
-        e.tags.some((t) => t.toLowerCase().includes(q))
-      );
+      if (params.category && e.category !== params.category) return false;
+      if (q) {
+        const matches =
+          e.name.toLowerCase().includes(q) ||
+          e.subtitle?.toLowerCase().includes(q) ||
+          e.tags.some((t) => t.toLowerCase().includes(q));
+        if (!matches) return false;
+      }
+      if (params.difficulty) {
+        if (e.kind === 'animal' || e.kind === 'plant') {
+          if (e.difficulty !== params.difficulty) return false;
+        }
+      }
+      if (params.habitat && e.kind === 'animal') {
+        if (!e.habitats?.includes(params.habitat as Habitat)) return false;
+      }
+      if (params.biome) {
+        if (e.biome !== params.biome) return false;
+      }
+      if (params.light && e.kind === 'plant') {
+        if (e.lightRequirement !== params.light) return false;
+      }
+      if (params.priceRange && e.kind === 'product') {
+        if (e.priceRange !== params.priceRange) return false;
+      }
+      return true;
     });
-  }, [allEntries, typeFilter, category, search]);
+  }, [allEntries, typeFilter, params]);
 
   const typePills: { value: TypeFilter; label: string }[] = [
     { value: 'all', label: `All (${allEntries.length})` },
@@ -145,6 +197,10 @@ export function CatalogTable({
     { value: 'plant', label: `Plants (${allEntries.filter((e) => e.kind === 'plant').length})` },
     { value: 'product', label: `Products (${allEntries.filter((e) => e.kind === 'product').length})` },
   ];
+
+  const showAnimalFilters = typeFilter === 'animal';
+  const showPlantFilters = typeFilter === 'plant';
+  const showProductFilters = typeFilter === 'product';
 
   return (
     <>
@@ -154,17 +210,15 @@ export function CatalogTable({
             <button
               key={pill.value}
               type="button"
-              onClick={() => {
-                setTypeFilter(pill.value);
-                setCategory('');
-              }}
+              onClick={() => setTypeFilter(pill.value)}
               className="btn"
               style={{
                 padding: '0.45rem 0.95rem',
                 fontSize: '0.85rem',
-                background: typeFilter === pill.value
-                  ? 'linear-gradient(135deg, var(--color-primary), var(--color-primary-light))'
-                  : 'var(--color-bg-subtle)',
+                background:
+                  typeFilter === pill.value
+                    ? 'linear-gradient(135deg, var(--color-primary), var(--color-primary-light))'
+                    : 'var(--color-bg-subtle)',
                 color: typeFilter === pill.value ? 'white' : 'var(--color-text)',
                 boxShadow: 'none',
               }}
@@ -174,7 +228,7 @@ export function CatalogTable({
           ))}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.75rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
           <div>
             <label htmlFor="catalog-search" style={{ display: 'block', marginBottom: '0.25rem' }}>
               Search
@@ -182,8 +236,8 @@ export function CatalogTable({
             <input
               id="catalog-search"
               type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={params.search}
+              onChange={(e) => update('search', e.target.value)}
               placeholder="Name, scientific name, brand, or tag..."
               style={{ width: '100%' }}
             />
@@ -194,17 +248,97 @@ export function CatalogTable({
             </label>
             <select
               id="catalog-category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              value={params.category}
+              onChange={(e) => update('category', e.target.value)}
               style={{ width: '100%' }}
             >
               <option value="">All categories</option>
               {categories.map((c) => (
-                <option key={c} value={c}>{humanize(c)}</option>
+                <option key={c} value={c}>
+                  {humanize(c)}
+                </option>
               ))}
             </select>
           </div>
         </div>
+
+        {showAnimalFilters && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem' }}>Difficulty</label>
+              <select value={params.difficulty} onChange={(e) => update('difficulty', e.target.value)} style={{ width: '100%' }}>
+                <option value="">All difficulties</option>
+                {Object.values(Difficulty).map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem' }}>Habitat</label>
+              <select value={params.habitat} onChange={(e) => update('habitat', e.target.value)} style={{ width: '100%' }}>
+                <option value="">All habitats</option>
+                {Object.values(Habitat).map((h) => (
+                  <option key={h} value={h}>{humanize(h)}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem' }}>Biome</label>
+              <select value={params.biome} onChange={(e) => update('biome', e.target.value)} style={{ width: '100%' }}>
+                <option value="">All biomes</option>
+                {Object.values(Biome).map((b) => (
+                  <option key={b} value={b}>{humanize(b)}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
+        {showPlantFilters && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem' }}>Difficulty</label>
+              <select value={params.difficulty} onChange={(e) => update('difficulty', e.target.value)} style={{ width: '100%' }}>
+                <option value="">All difficulties</option>
+                {Object.values(Difficulty).map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem' }}>Light</label>
+              <select value={params.light} onChange={(e) => update('light', e.target.value)} style={{ width: '100%' }}>
+                <option value="">All light levels</option>
+                {Object.values(LightLevel).map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem' }}>Biome</label>
+              <select value={params.biome} onChange={(e) => update('biome', e.target.value)} style={{ width: '100%' }}>
+                <option value="">All biomes</option>
+                {Object.values(Biome).map((b) => (
+                  <option key={b} value={b}>{humanize(b)}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
+        {showProductFilters && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.25rem' }}>Price Range</label>
+              <select value={params.priceRange} onChange={(e) => update('priceRange', e.target.value)} style={{ width: '100%' }}>
+                <option value="">All prices</option>
+                {Object.values(PriceRange).map((p) => (
+                  <option key={p} value={p}>{humanize(p)}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
       <p style={{ marginBottom: '1rem', color: 'var(--color-text-muted)' }}>
@@ -232,7 +366,6 @@ export function CatalogTable({
             <tbody>
               {filtered.map((entry) => {
                 const colors = TYPE_COLORS[entry.kind];
-                const basePath = entry.kind === 'animal' ? '/animals' : entry.kind === 'plant' ? '/plants' : '/products';
                 return (
                   <tr key={`${entry.kind}-${entry.id}`}>
                     <td>
@@ -268,7 +401,7 @@ export function CatalogTable({
                           </span>
                         )}
                         <span>
-                          <a href={basePath} style={{ color: 'var(--color-text)', fontWeight: 600, textDecoration: 'none' }}>{entry.name}</a>
+                          <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{entry.name}</span>
                           {entry.subtitle && (
                             <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
                               {entry.subtitle}

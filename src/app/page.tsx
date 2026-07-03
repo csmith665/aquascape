@@ -56,9 +56,9 @@ const planFeatures: Feature[] = [
 ];
 
 const exploreFeatures: Feature[] = [
-  { href: '/animals', title: 'Animal Database', description: 'Browse fish, invertebrates, amphibians, and reptiles with accurate care requirements.', icon: 'fish', accent: 'green', cta: 'Browse animals' },
-  { href: '/plants', title: 'Plant Database', description: 'Aquatic and terrestrial plants with light needs, growth rates, and placement guidance.', icon: 'leaf', accent: 'green', cta: 'Browse plants' },
-  { href: '/products', title: 'Product Guide', description: 'Curated equipment recommendations by budget tier — filters, heaters, lighting, and more.', icon: 'box', accent: 'green', cta: 'View products' },
+  { href: '/catalog?type=animal', title: 'Animal Database', description: 'Browse fish, invertebrates, amphibians, and reptiles with accurate care requirements.', icon: 'fish', accent: 'green', cta: 'Browse animals' },
+  { href: '/catalog?type=plant', title: 'Plant Database', description: 'Aquatic and terrestrial plants with light needs, growth rates, and placement guidance.', icon: 'leaf', accent: 'green', cta: 'Browse plants' },
+  { href: '/catalog?type=product', title: 'Product Guide', description: 'Curated equipment recommendations by budget tier — filters, heaters, lighting, and more.', icon: 'box', accent: 'green', cta: 'View products' },
 ];
 
 const trackFeatures: Feature[] = [

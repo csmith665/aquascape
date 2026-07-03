@@ -2,7 +2,6 @@
 
 import { prisma } from '@/lib/db';
 import { Difficulty, SetupType, MaintenanceLevel, ProductCategory, Habitat, Biome } from '@prisma/client';
-import { assessCompatibility } from '@/lib/compatibility';
 import { recommendHardscape, matchHardscapeProducts } from '@/lib/hardscape';
 import { generateSetupNotes } from '@/lib/setupNotes';
 import { z } from 'zod';
@@ -131,20 +130,37 @@ export async function buildRecommendation(formData: FormData) {
   const substrates = withProducts.filter((h) => h.kind === 'substrate');
   const hardscape = withProducts.filter((h) => h.kind !== 'substrate');
 
-  const warnings = await generateWarnings(data, suitableAnimals.slice(0, 8));
+  const recommendedAnimals = suitableAnimals.slice(0, 8);
+
+  // Fetch explicit compat rules among the recommended animals so the client
+  // can run live pairwise checks against the user's actual selections.
+  const animalIds = recommendedAnimals.map((a) => a.id);
+  const explicitRules = animalIds.length > 1
+    ? await prisma.animalCompatibility.findMany({
+        where: { animalAId: { in: animalIds }, animalBId: { in: animalIds } },
+      })
+    : [];
+
+  const warnings = await generateWarnings(data, recommendedAnimals);
   const setupNotes = generateSetupNotes(data.type, data.biome, data.skillLevel, data.maintenancePref, data.tankSize);
 
   // Return recommendations WITHOUT creating a project — the user selects
   // what they want and calls saveBuild separately.
   return {
     params: data,
-    animals: suitableAnimals.slice(0, 8),
+    animals: recommendedAnimals,
     plants: suitablePlants.slice(0, 8),
     products: products.slice(0, 8),
     substrates,
     hardscape,
     setupNotes,
     warnings,
+    compatRules: explicitRules.map((r) => ({
+      aId: r.animalAId,
+      bId: r.animalBId,
+      level: r.level,
+      notes: r.notes,
+    })),
   };
 }
 
@@ -206,6 +222,11 @@ export async function saveBuild(formData: FormData): Promise<SaveResult> {
   return { projectId: project.id };
 }
 
+/**
+ * Setup-level warnings only — depend on build params, not on the specific
+ * animals the user picks. Pairwise animal compatibility is assessed
+ * client-side against the user's actual selections (see src/app/builder/page.tsx).
+ */
 async function generateWarnings(
   data: z.infer<typeof buildSchema>,
   animals: Awaited<ReturnType<typeof prisma.animal.findMany>>
@@ -227,33 +248,6 @@ async function generateWarnings(
   const vivariumTypes: SetupType[] = [SetupType.VIVARIUM, SetupType.TERRARIUM];
   if (vivariumTypes.includes(data.type) && data.tankSize < 10) {
     warnings.push('Vivariums/terrariums benefit from more space for temperature gradients and hiding spots.');
-  }
-
-  // Check compatibility between recommended animals
-  if (animals.length > 1) {
-    const animalIds = animals.map((a) => a.id);
-    const explicitRules = await prisma.animalCompatibility.findMany({
-      where: {
-        animalAId: { in: animalIds },
-        animalBId: { in: animalIds },
-      },
-    });
-
-    const ruleKey = (a: string, b: string) => [a, b].sort().join('|');
-    const rules = new Map(explicitRules.map((r) => [ruleKey(r.animalAId, r.animalBId), r]));
-
-    for (let i = 0; i < animals.length; i++) {
-      for (let j = i + 1; j < animals.length; j++) {
-        const a = animals[i];
-        const b = animals[j];
-        const key = ruleKey(a.id, b.id);
-        const rule = rules.get(key);
-        const { level, notes } = assessCompatibility(a, b, rule?.level, rule?.notes);
-        if (level !== 'COMPATIBLE') {
-          warnings.push(`${a.name} + ${b.name}: ${notes.join(' ')}`);
-        }
-      }
-    }
   }
 
   return warnings;
