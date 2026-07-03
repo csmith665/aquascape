@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
+import { DeleteBuildButton } from './DeleteBuildButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,30 +37,33 @@ export default async function ProjectsPage() {
         ) : (
           <div className="grid">
             {projects.map((project) => (
-              <Link key={project.id} href={`/projects/${project.id}`} className="card" style={{ textDecoration: 'none', color: 'inherit' }}>
-                <h3>{project.name}</h3>
-                <div style={{ marginTop: '0.5rem' }}>
-                  <span className="badge" style={{ background: '#e7f3ff', color: '#1a5490' }}>
-                    {project.type.replace('_', ' ')}
-                  </span>
-                  {project.biome && (
-                    <span className="badge" style={{ background: '#fef3c7', color: '#92400e' }}>
-                      {project.biome.replace(/_/g, ' ')}
+              <div key={project.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <Link href={`/projects/${project.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block', padding: '1.75rem' }}>
+                  <h3>{project.name}</h3>
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <span className="badge" style={{ background: '#e7f3ff', color: '#1a5490' }}>
+                      {project.type.replace('_', ' ')}
                     </span>
-                  )}
-                  <span className={`badge badge-${project.skillLevel.toLowerCase()}`}>
-                    {project.skillLevel}
-                  </span>
-                </div>
-                <div style={{ marginTop: '0.75rem', fontSize: '0.9rem' }}>
-                  <p><strong>Tank Size:</strong> {project.tankSize} gal</p>
-                  <p><strong>Maintenance:</strong> {project.maintenancePref.toLowerCase()}</p>
-                  <p><strong>Entries:</strong> {project._count.entries}</p>
-                </div>
-                <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#999' }}>
-                  Created {new Date(project.createdAt).toLocaleDateString()}
-                </p>
-              </Link>
+                    {project.biome && (
+                      <span className="badge" style={{ background: '#fef3c7', color: '#92400e' }}>
+                        {project.biome.replace(/_/g, ' ')}
+                      </span>
+                    )}
+                    <span className={`badge badge-${project.skillLevel.toLowerCase()}`}>
+                      {project.skillLevel}
+                    </span>
+                  </div>
+                  <div style={{ marginTop: '0.75rem', fontSize: '0.9rem' }}>
+                    <p><strong>Tank Size:</strong> {project.tankSize} gal</p>
+                    <p><strong>Maintenance:</strong> {project.maintenancePref.toLowerCase()}</p>
+                    <p><strong>Entries:</strong> {project._count.entries}</p>
+                  </div>
+                  <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#999' }}>
+                    Created {new Date(project.createdAt).toLocaleDateString()}
+                  </p>
+                </Link>
+                <DeleteBuildButton id={project.id} />
+              </div>
             ))}
           </div>
         )}
