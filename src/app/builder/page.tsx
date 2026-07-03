@@ -8,6 +8,7 @@ import { SavedBuildsList } from './SavedBuildsList';
 import { ShoppingListModal, ShoppingItem } from './ShoppingListModal';
 import { generateStockingGuidance } from '@/lib/stocking';
 import { assessCompatibility } from '@/lib/compatibility';
+import { ProductImage } from '@/components/ProductImage';
 
 const slug = (s: string) =>
   s
@@ -519,6 +520,7 @@ export default function BuilderPage() {
                           </span>
                         </label>
                         <div style={{ marginTop: '0.75rem', marginLeft: '1.5rem' }}>
+                          <span className="badge" style={{ background: '#e5e7eb', color: '#374151' }}>{animal.category.replace(/_/g, ' ')}</span>
                           <span className={`badge badge-${animal.difficulty.toLowerCase()}`}>{animal.difficulty}</span>
                           {animal.minTankSize && (
                             <span className="badge" style={{ background: '#e7f3ff', color: '#1a5490' }}>
@@ -573,6 +575,7 @@ export default function BuilderPage() {
                           </span>
                         </label>
                         <div style={{ marginTop: '0.75rem', marginLeft: '1.5rem' }}>
+                          <span className="badge" style={{ background: '#e5e7eb', color: '#374151' }}>{plant.category.replace(/_/g, ' ')}</span>
                           <span className={`badge badge-${plant.difficulty.toLowerCase()}`}>{plant.difficulty}</span>
                           <span className="badge" style={{ background: '#fff4e6', color: '#92400e' }}>
                             {plant.lightRequirement} Light
@@ -606,7 +609,7 @@ export default function BuilderPage() {
                     return (
                       <div key={item.name} className="card">
                         {item.product?.imageUrl && (
-                          <img src={item.product.imageUrl} alt={item.name} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '6px', marginBottom: '0.75rem' }} />
+                          <ProductImage src={item.product.imageUrl} alt={item.name} />
                         )}
                         <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', cursor: 'pointer' }}>
                           <input
@@ -662,7 +665,7 @@ export default function BuilderPage() {
                     return (
                       <div key={item.name} className="card">
                         {item.product?.imageUrl && (
-                          <img src={item.product.imageUrl} alt={item.name} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '6px', marginBottom: '0.75rem' }} />
+                          <ProductImage src={item.product.imageUrl} alt={item.name} />
                         )}
                         <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', cursor: 'pointer' }}>
                           <input

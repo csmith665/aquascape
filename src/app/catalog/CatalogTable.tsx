@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Animal, Plant, Product } from '@prisma/client';
 import { Biome, Difficulty, Habitat, LightLevel, PriceRange } from '@prisma/client';
+import { ProductImage } from '@/components/ProductImage';
 
 type CatalogEntry = {
   kind: 'animal' | 'plant' | 'product';
@@ -376,11 +377,7 @@ export function CatalogTable({
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                         {entry.imageUrl ? (
-                          <img
-                            src={entry.imageUrl}
-                            alt={entry.name}
-                            style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }}
-                          />
+                          <ProductImage src={entry.imageUrl} alt={entry.name} variant="thumb" />
                         ) : (
                           <span
                             style={{
