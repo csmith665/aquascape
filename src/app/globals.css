@@ -259,6 +259,12 @@ body::before {
   text-decoration: underline;
 }
 
+.section a.btn,
+.section a.btn:hover {
+  color: white;
+  text-decoration: none;
+}
+
 /* Grid & Cards */
 .grid {
   display: grid;
