@@ -43,21 +43,21 @@ The app is available at **http://localhost:3000** (plain HTTP — the dev defaul
 
 ## Two Deployment Modes
 
-The stack supports two modes, chosen by the command you run:
+The app supports two modes:
 
 | | **Dev** (default) | **Prod** |
 | --- | --- | --- |
-| Command | `docker compose up -d --build` | `docker compose --profile prod up -d --build` |
+| Command | `docker compose up -d --build` | start the shared proxy at `/home/cms/proxy`, then `docker compose up -d --build` |
 | URL | `http://localhost:3000` | `https://YOUR-DOMAIN` |
-| TLS | none (plain HTTP) | automatic Let's Encrypt via Caddy |
+| TLS | none (plain HTTP) | automatic Let's Encrypt via the shared Traefik proxy |
 | Ports to open | 3000 | 80 and 443 (close 3000) |
-| `DOMAIN` env | ignored | required for real certs |
+| `DOMAIN` env | ignored | required (used in the Traefik `Host()` rule) |
 
-In **dev**, only the `app` and `db` services start. In **prod**, the `caddy` service also starts, terminates TLS on port 443, obtains/renews a Let's Encrypt certificate for `DOMAIN`, and redirects all plain-HTTP traffic on port 80 to HTTPS. The app still publishes port 3000 in prod for convenience — close it in your firewall so traffic only reaches the app through Caddy.
+**Dev** runs only the `app` and `db` services and publishes port 3000 directly. **Prod** uses a separate, shared [Traefik](https://traefik.io) proxy manager ([github.com/csmith665/proxy](https://github.com/csmith665/proxy)) that terminates TLS on 443 and routes by domain to any number of apps on the same server. Aquascape declares its domain via Docker labels and joins the shared `proxy` network — Traefik discovers it automatically and serves it over HTTPS. No proxy restart needed when adding the app.
 
 ## Deploy to Another Server (prod, HTTPS on 443)
 
-The steps below assume a clean Linux server (Ubuntu/Debian) with SSH access and deploy the **prod** mode with automatic TLS.
+The steps below assume a clean Linux server (Ubuntu/Debian) with SSH access. They deploy the **prod** mode with automatic TLS via the shared Traefik proxy.
 
 ### 1. Install Docker on the server
 
@@ -75,61 +75,67 @@ docker --version
 docker compose version
 ```
 
-### 2. Get the code on the server
+### 2. Set up the shared proxy manager (once per server)
 
-Option A — clone (recommended):
+The proxy lives in its own repo and serves all your apps. Follow the setup steps in [github.com/csmith665/proxy](https://github.com/csmith665/proxy) — in summary:
 
 ```bash
+docker network create proxy                       # one-time shared network
+cd /home/cms
+git clone https://github.com/csmith665/proxy.git proxy
+cd proxy
+cp .env.example .env                              # set ACME_EMAIL, DASHBOARD_DOMAIN, DASHBOARD_AUTH
+docker compose up -d
+```
+
+Point A records for the proxy dashboard domain **and** every app domain at this server's public IP. Open ports 80 and 443 in your firewall. Once the proxy is up, any app that joins the `proxy` network and sets Traefik labels is served over HTTPS automatically.
+
+### 3. Get the aquascape code
+
+```bash
+cd /home/cms
 git clone https://github.com/csmith665/aquascape.git
 cd aquascape
 ```
 
-Option B — copy from your local machine:
-
-```bash
-scp -r ./aquascape user@your-server:/home/user/aquascape
-```
-
-### 3. Configure your domain and environment
-
-The Caddy container serves the site over HTTPS on port 443 and obtains a Let's Encrypt certificate automatically — **but only if a real domain is configured** and that domain's A record points at your server.
-
-Create a `.env` file in the project root:
+### 4. Configure `.env` (required — no defaults for secrets)
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env`:
-
-```dotenv
-# The public domain Caddy should serve. Required for automatic Let's Encrypt certs.
-# Point this domain's A record at your server's public IP before starting.
-DOMAIN=aquascape.example.com
-
-# Used by local dev / one-off prisma commands. Keep in sync with docker-compose.yml.
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/aquascape"
-NODE_ENV="production"
-```
-
-- If `DOMAIN` is unset or `localhost`, Caddy uses its internal CA and serves a self-signed cert — fine for local testing only.
-- If `DOMAIN` is a real domain, ports **80 and 443** must be reachable from the internet (open them in your firewall/security group) so Let's Encrypt can complete the HTTP-01 challenge. Caddy renews certs automatically before expiry — no cron job needed.
-
-To change the **database password**, edit `docker-compose.yml` → `db.environment.POSTGRES_PASSWORD` and `app.environment.DATABASE_URL`, and `.env` → `DATABASE_URL`.
-
-### 4. Build and start (prod mode)
+Generate a strong database password and edit `.env`:
 
 ```bash
-docker compose --profile prod up -d --build
+openssl rand -hex 18        # paste output into POSTGRES_PASSWORD and DATABASE_URL below
 ```
 
-The `--profile prod` flag starts the Caddy reverse proxy alongside the app and database. On first start with a real domain, Caddy obtains its Let's Encrypt certificate (a few seconds). Certificates are stored in the `caddy_data` volume and persist across restarts; Caddy renews them automatically before expiry. Postgres data lives in the `pgdata` volume.
+```dotenv
+DOMAIN=aquascape.example.com
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=<output of openssl rand -hex 18>
+POSTGRES_DB=aquascape
+DATABASE_URL=postgresql://postgres:<same password>@localhost:5432/aquascape
+NODE_ENV=production
+```
 
-> To run in **dev mode** on this server instead (plain HTTP on :3000, no TLS), drop the flag: `docker compose up -d --build`.
+`.env` is gitignored — credentials never enter version control. `docker-compose.yml` reads these via variable substitution with **no default for `POSTGRES_PASSWORD`**, so the stack refuses to start without a real `.env`. The same password is used by the `db` service and the app's `DATABASE_URL`, so they always match.
 
-### 5. Apply the schema and seed data
+> **Never commit a real password.** The committed `docker-compose.yml` and `.env.example` contain only placeholders.
 
-The production image does **not** run migrations automatically on startup (this is intentional — it gives you control). Run them once after the stack is up:
+### 5. Build and start
+
+```bash
+docker compose up -d --build
+```
+
+This starts PostgreSQL and the Next.js app and joins the `proxy` network. Traefik (already running from step 2) picks up the app's labels within seconds and begins serving `https://YOUR-DOMAIN` with an automatically obtained Let's Encrypt certificate. Postgres data lives in the `pgdata` volume; certs live in the proxy's `letsencrypt` volume.
+
+> For **dev** on this same server (plain HTTP, no TLS), skip the proxy and just run `docker compose up -d --build` — the Traefik labels are inert when no proxy is on the `proxy` network.
+
+### 6. Apply the schema and seed data
+
+The production image does **not** run migrations automatically on startup (intentional — gives you control). Run once after the stack is up:
 
 ```bash
 # Apply the Prisma schema to the database (creates/updates tables)
@@ -139,25 +145,37 @@ docker compose exec -T app npx prisma db push --skip-generate
 docker compose exec -T app npm run db:seed
 ```
 
-> If `prisma db push` reports the schema is already in sync, the build picked up the latest `schema.prisma`. To force a sync against an older image, run the command from a throwaway container that can reach the `db` service:
+> If `prisma db push` reports the schema is already in sync, the build picked up the latest `schema.prisma`. To force a sync against an older image, run the command from a throwaway container that can reach the `db` service — pass the same password from `.env`:
 >
 > ```bash
 > docker run --rm --network aquascape_default \
->   -e DATABASE_URL="postgresql://postgres:postgres@db:5432/aquascape" \
+>   -e DATABASE_URL="postgresql://postgres:$(grep POSTGRES_PASSWORD .env | cut -d= -f2)@db:5432/aquascape" \
 >   -v "$PWD":/app -w /app node:20-alpine \
 >   sh -c "apk add --no-cache openssl && npm install && npx prisma db push --skip-generate"
 > ```
 
-### 6. Verify
+### 7. Verify
 
 ```bash
-docker compose ps              # app, db, and caddy should all be Up
+docker compose ps                                 # app and db should be Up
 curl -s -o /dev/null -w "HTTPS %{http_code}\n" https://aquascape.example.com
 ```
 
-Open `https://YOUR-DOMAIN` in a browser. Ensure ports **80 and 443** are open in your firewall/security group, and **close port 3000** so the app is only reachable through Caddy (TLS).
+Open `https://YOUR-DOMAIN` in a browser. **Close port 3000** in your firewall so the app is only reachable through Traefik (TLS). The proxy redirects any plain-HTTP request on port 80 to HTTPS automatically.
 
-> Caddy also redirects any plain-HTTP request on port 80 to HTTPS automatically.
+### Rotating the database password
+
+If you ever need to change the password on an existing deployment:
+
+```bash
+docker compose up -d db                                # start DB with current .env
+docker compose exec -T db psql -U postgres -d aquascape \
+  -c "ALTER USER postgres WITH PASSWORD '<new password>';"
+# Update POSTGRES_PASSWORD and DATABASE_URL in .env to match, then:
+docker compose up -d --build
+```
+
+The `pgdata` volume stores the password Postgres set, so the new `.env` must match whatever you set via `ALTER USER`.
 
 ### Updating an existing deployment
 
