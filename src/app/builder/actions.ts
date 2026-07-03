@@ -28,6 +28,34 @@ const setupToHabitat: Record<SetupType, Habitat[]> = {
 
 export type BuildResult = Awaited<ReturnType<typeof buildRecommendation>>;
 
+export type SavedBuild = {
+  id: string;
+  name: string;
+  type: SetupType;
+  biome: Biome | null;
+  tankSize: number;
+  skillLevel: Difficulty;
+  maintenancePref: MaintenanceLevel;
+  createdAt: Date;
+};
+
+export async function getSavedBuilds(): Promise<SavedBuild[]> {
+  const projects = await prisma.builderProject.findMany({
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      biome: true,
+      tankSize: true,
+      skillLevel: true,
+      maintenancePref: true,
+      createdAt: true,
+    },
+  });
+  return projects;
+}
+
 export async function buildRecommendation(formData: FormData) {
   const data = buildSchema.parse({
     name: formData.get('name'),

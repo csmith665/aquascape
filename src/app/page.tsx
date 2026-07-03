@@ -29,17 +29,9 @@ export default function HomePage() {
 
           <div className="card">
             <h3>Tank Builder</h3>
-            <p>Design your setup with compatibility checking. Get recommendations based on your skill level.</p>
+            <p>Design your setup with compatibility checking. Get recommendations based on your skill level, then save and revisit your builds.</p>
             <Link href="/builder" className="btn" style={{ marginTop: '1rem' }}>
               Start Building
-            </Link>
-          </div>
-
-          <div className="card">
-            <h3>Saved Builds</h3>
-            <p>Revisit your tank builder projects, review parameters, and revisit recommendations.</p>
-            <Link href="/projects" className="btn" style={{ marginTop: '1rem' }}>
-              My Builds
             </Link>
           </div>
 

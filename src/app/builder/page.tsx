@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Biome } from '@prisma/client';
 import { buildRecommendation, BuildResult } from './actions';
+import { SavedBuildsList } from './SavedBuildsList';
 
 export default function BuilderPage() {
   const [result, setResult] = useState<BuildResult | null>(null);
@@ -140,6 +141,11 @@ export default function BuilderPage() {
             </button>
           </form>
         </div>
+      </section>
+
+      <section className="section">
+        <h2>Your Saved Builds</h2>
+        <SavedBuildsList />
       </section>
 
       {result && (
