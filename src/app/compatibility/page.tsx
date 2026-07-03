@@ -77,6 +77,11 @@ export default async function CompatibilityPage({
               >
                 {levelStyles[result.level].label}
               </span>
+              {!result.explicit && (
+                <span className="badge" style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.85rem', padding: '0.4rem 0.7rem' }}>
+                  Estimated
+                </span>
+              )}
             </div>
             <p style={{ fontSize: '1.05rem', lineHeight: 1.6 }}>{result.notes}</p>
           </div>
@@ -90,6 +95,7 @@ export default async function CompatibilityPage({
             <li><strong>Temperament:</strong> Aggressive species are flagged as incompatible with peaceful ones.</li>
             <li><strong>Size:</strong> Large size differences may lead to predation.</li>
             <li><strong>Water parameters:</strong> Temperature and pH mismatches trigger cautions or incompatibilities.</li>
+            <li><strong>Estimated:</strong> When no curated rule exists, the result is derived from the attributes above and flagged with an &ldquo;Estimated&rdquo; badge.</li>
           </ul>
           <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
             Always research individual species before mixing them. This checker is a guide, not a guarantee.

@@ -4,6 +4,7 @@ import type { Animal } from '@prisma/client';
 export type CompatibilityAssessment = {
   level: CompatibilityLevel;
   notes: string[];
+  explicit: boolean;
 };
 
 /**
@@ -24,7 +25,7 @@ export function assessCompatibility(
     if (explicitNotes) {
       notes.push(explicitNotes);
     }
-    return { level, notes };
+    return { level, notes, explicit: true };
   }
 
   // Habitat check: completely different enclosure types are incompatible
@@ -94,5 +95,5 @@ export function assessCompatibility(
     notes.push('No major compatibility concerns detected based on available data.');
   }
 
-  return { level, notes };
+  return { level, notes, explicit: false };
 }

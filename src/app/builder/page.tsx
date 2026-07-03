@@ -103,15 +103,15 @@ export default function BuilderPage() {
       (result.compatRules ?? []).map((r) => [ruleKey(r.aId, r.bId), r])
     );
 
-    const out: { aName: string; bName: string; level: CompatibilityLevel; notes: string[] }[] = [];
+    const out: { aName: string; bName: string; level: CompatibilityLevel; notes: string[]; explicit: boolean }[] = [];
     for (let i = 0; i < selectedAnimals.length; i++) {
       for (let j = i + 1; j < selectedAnimals.length; j++) {
         const a = selectedAnimals[i].animal;
         const b = selectedAnimals[j].animal;
         const rule = rules.get(ruleKey(a.id, b.id));
-        const { level, notes } = assessCompatibility(a, b, rule?.level, rule?.notes);
+        const { level, notes, explicit } = assessCompatibility(a, b, rule?.level, rule?.notes);
         if (level !== CompatibilityLevel.COMPATIBLE) {
-          out.push({ aName: a.name, bName: b.name, level, notes });
+          out.push({ aName: a.name, bName: b.name, level, notes, explicit });
         }
       }
     }
@@ -481,7 +481,7 @@ export default function BuilderPage() {
                       {compatAssessments.map((c, i) => (
                         <li key={i} style={{ marginBottom: '0.4rem', fontSize: '0.92rem' }}>
                           <strong style={{ color: c.level === CompatibilityLevel.INCOMPATIBLE ? 'var(--color-danger)' : 'var(--color-warning)' }}>
-                            {c.level === CompatibilityLevel.INCOMPATIBLE ? 'Incompatible' : 'Caution'}:
+                            {c.level === CompatibilityLevel.INCOMPATIBLE ? 'Incompatible' : 'Caution'}{!c.explicit && ' (estimated)'}:
                           </strong>{' '}
                           {c.aName} + {c.bName} — {c.notes.join(' ')}
                         </li>
