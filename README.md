@@ -143,6 +143,9 @@ docker compose exec -T app npx prisma db push --skip-generate
 
 # Seed sample data (animals, plants, products, compatibility rules)
 docker compose exec -T app npm run db:seed
+
+# (optional) add the expanded saltwater, coral, and nano-fish dataset
+docker compose exec -T app npm run db:populate
 ```
 
 > If `prisma db push` reports the schema is already in sync, the build picked up the latest `schema.prisma`. To force a sync against an older image, run the command from a throwaway container that can reach the `db` service — pass the same password from `.env`:
@@ -182,7 +185,7 @@ The `pgdata` volume stores the password Postgres set, so the new `.env` must mat
 ```bash
 cd aquascape
 git pull                       # if cloned from the repo
-docker compose --profile prod up -d --build   # prod: rebuild with Caddy. Drop --profile prod for dev.
+docker compose up -d --build   # rebuild the app and db
 docker compose exec -T app npx prisma db push --skip-generate  # apply schema changes
 ```
 
@@ -209,6 +212,7 @@ npm install
 npm run db:generate        # generate Prisma client
 npm run db:push            # push schema to a local Postgres
 npm run db:seed            # seed sample data
+npm run db:populate        # add expanded species, products & compat rules
 npm run dev                # start dev server on :3000
 npm run lint               # ESLint (next/core-web-vitals)
 npm run typecheck          # tsc --noEmit
@@ -232,14 +236,14 @@ NODE_ENV="development"
 
 | Variable       | Required | Default | Notes |
 | -------------- | -------- | ------- | ----- |
-| `DOMAIN`       | for TLS  | `localhost` | Domain Caddy serves on. Set to a real domain (with its A record pointing here) for automatic Let's Encrypt certs. Defaults to `localhost` with a self-signed internal CA cert. |
+| `DOMAIN`       | for TLS  | `aquascape.local` | Domain Traefik routes to this app. Set to a real domain (A record → this server) for automatic Let's Encrypt TLS via the shared proxy. Defaults to `aquascape.local` (dev only — the shared proxy is required for real TLS). |
 | `DATABASE_URL` | yes      | —       | Postgres connection string. In Compose, set by `app.environment` to point at the `db` service. |
 | `NODE_ENV`     | no       | `development` | Set to `production` in the Compose stack. |
 
 ## Security
 
-- **Automatic TLS** via Caddy — Let's Encrypt certificates are obtained and renewed automatically for the configured `DOMAIN`. Plain HTTP on port 80 redirects to HTTPS.
-- Security headers set by both the Next.js middleware and Caddy (X-Frame-Options, X-Content-Type-Options, HSTS, Referrer-Policy, Permissions-Policy)
+- **Automatic TLS** via the shared Traefik proxy — Let's Encrypt certificates are obtained and renewed automatically for the configured `DOMAIN`. Plain HTTP on port 80 redirects to HTTPS.
+- Security headers set by the Next.js middleware (X-Frame-Options, X-Content-Type-Options, HSTS, Referrer-Policy, Permissions-Policy)
 - Environment variable validation with Zod
 - Prisma ORM prevents SQL injection
 - React's JSX escaping prevents XSS
@@ -252,7 +256,8 @@ NODE_ENV="development"
 aquascape/
 ├── prisma/
 │   ├── schema.prisma    # Database schema
-│   └── seed.ts          # Seed data
+│   ├── seed.ts          # Initial seed data
+│   └── populate.ts      # Expanded species, products & compat rules (npm run db:populate)
 ├── src/
 │   ├── app/             # Next.js App Router pages
 │   │   ├── animals/     # Animal database
@@ -271,8 +276,7 @@ aquascape/
 │   ├── lib/             # db client, env validation, compatibility, hardscape, routines
 │   └── middleware.ts    # Security headers
 ├── Dockerfile
-├── docker-compose.yml   # app + db + caddy (auto TLS on 443)
-├── Caddyfile            # reverse proxy + automatic Let's Encrypt certs
+├── docker-compose.yml   # app + db (TLS via the shared Traefik proxy on 443)
 └── package.json
 ```
 
