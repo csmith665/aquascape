@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import { ProductCategory } from '@prisma/client';
 import { recommendHardscape, matchHardscapeProducts } from '@/lib/hardscape';
+import { generateSetupNotes } from '@/lib/setupNotes';
 import { deleteProject } from '../actions';
 
 export const dynamic = 'force-dynamic';
@@ -34,6 +35,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
   );
   const substrates = allHardscape.filter((h) => h.kind === 'substrate');
   const hardscape = allHardscape.filter((h) => h.kind !== 'substrate');
+  const setupNotes = generateSetupNotes(project.type, project.biome, project.skillLevel, project.maintenancePref, project.tankSize);
 
   return (
     <>
@@ -94,6 +96,28 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
             </div>
           )}
         </div>
+
+        {setupNotes.length > 0 && (
+          <div className="card" style={{ marginBottom: '1.5rem' }}>
+            <h3>Need to Know — Setup Notes</h3>
+            <p style={{ color: '#666', marginTop: '0.25rem', marginBottom: '1rem' }}>
+              Key things to get right for this kind of build.
+            </p>
+            <div style={{ display: 'grid', gap: '1rem' }}>
+              {setupNotes.map((note, idx) => (
+                <div key={idx} style={{ padding: '0.75rem', background: '#f8f9fa', borderRadius: '6px' }}>
+                  <strong style={{ color: '#1a5490' }}>{note.title}</strong>
+                  <p style={{ fontSize: '0.9rem', marginTop: '0.25rem', marginBottom: 0 }}>{note.body}</p>
+                  {note.guide && (
+                    <p style={{ marginTop: '0.5rem', marginBottom: 0 }}>
+                      <Link href={note.guide.href} style={{ fontSize: '0.85rem', fontWeight: 600 }}>{note.guide.label} →</Link>
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <h3 style={{ color: '#1a5490', marginBottom: '1rem' }}>
           Livestock ({animalEntries.length})

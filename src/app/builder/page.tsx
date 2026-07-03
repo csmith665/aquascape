@@ -169,6 +169,28 @@ export default function BuilderPage() {
             </div>
           )}
 
+          {result.setupNotes.length > 0 && (
+            <div className="card" style={{ marginBottom: '1.5rem' }}>
+              <h3>Need to Know — Setup Notes</h3>
+              <p style={{ color: '#666', marginTop: '0.25rem', marginBottom: '1rem' }}>
+                Key things to get right for this kind of build.
+              </p>
+              <div style={{ display: 'grid', gap: '1rem' }}>
+                {result.setupNotes.map((note, idx) => (
+                  <div key={idx} style={{ padding: '0.75rem', background: '#f8f9fa', borderRadius: '6px' }}>
+                    <strong style={{ color: '#1a5490' }}>{note.title}</strong>
+                    <p style={{ fontSize: '0.9rem', marginTop: '0.25rem', marginBottom: 0 }}>{note.body}</p>
+                    {note.guide && (
+                      <p style={{ marginTop: '0.5rem', marginBottom: 0 }}>
+                        <a href={note.guide.href} style={{ fontSize: '0.85rem', fontWeight: 600 }}>{note.guide.label} →</a>
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <h3 style={{ color: '#1a5490', marginBottom: '1rem' }}>Recommended Animals</h3>
           <div className="grid">
             {result.animals.map((animal) => (

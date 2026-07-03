@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { Difficulty, SetupType, MaintenanceLevel, ProductCategory, Habitat, Biome } from '@prisma/client';
 import { assessCompatibility } from '@/lib/compatibility';
 import { recommendHardscape, matchHardscapeProducts } from '@/lib/hardscape';
+import { generateSetupNotes } from '@/lib/setupNotes';
 import { z } from 'zod';
 
 const buildSchema = z.object({
@@ -111,6 +112,7 @@ export async function buildRecommendation(formData: FormData) {
   });
 
   const warnings = await generateWarnings(data, suitableAnimals.slice(0, 8));
+  const setupNotes = generateSetupNotes(data.type, data.biome, data.skillLevel, data.maintenancePref, data.tankSize);
 
   return {
     project,
@@ -120,6 +122,7 @@ export async function buildRecommendation(formData: FormData) {
     products: products.slice(0, 8),
     substrates,
     hardscape,
+    setupNotes,
     warnings,
   };
 }
